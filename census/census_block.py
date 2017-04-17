@@ -14,4 +14,6 @@ class CensusBlock:
   
   def getBlockInfo(self, blockCode):
     block = self.redIs.hmget(blockCode, self.blockFields)
-    return block  
+    return block
+
+

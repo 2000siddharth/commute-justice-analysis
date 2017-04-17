@@ -5,7 +5,8 @@ import time
 from census.origin_destination_db import OriginDestinationDB
 from census.census_block_centroids_sp import CensusBlockCentroids
 from network.streets import Streets
-
+import Queue
+from threading import Thread
 
 # From http://gis.stackexchange.com/questions/7436/how-to-add-attribute-field-to-existing-shapefile-via-python-without-arcgis?rq=1
 
@@ -131,7 +132,8 @@ def PreProcessBlockCentroidStreetLines():
   #   tl = Thread(target = process_node)
   #   tl.start()
   # q.join()
-  for censusblock in censuslayer:
+  for censusblock in odb.GetOriginsInCounty(6037):
+    
     n = n + 1
     homegeoid = censusblock.GetField("GEOID10")
     homeGeometry = censusblock.GetGeometryRef()

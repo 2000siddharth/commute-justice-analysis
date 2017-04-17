@@ -6,8 +6,11 @@ from shapely.geometry import base, point, shape
 from math import sqrt
 from sys import maxsize
 from itertools import tee
+import Queue
+from threading import Thread
 
-class Streets:
+# https://pymotw.com/2/threading/
+class Streets(Thread):
 
 #  OGRSpatialReference oSRS
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
@@ -16,7 +19,6 @@ class Streets:
     print ("INITING")
     start = time.time()
     self.SRID = 32711   # UTM zone 11S, WGS 84
-#    roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads.shp"
     self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
     self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
 
