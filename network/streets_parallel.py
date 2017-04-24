@@ -14,38 +14,14 @@ class Streets(multiprocessing.Process):
 #  OGRSpatialReference oSRS
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
 
-  def __init__(self):
-    print ("INITING")
-    start = time.time()
-    self.SRID = 32711   # UTM zone 11S, WGS 84
-    self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-    self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
 
-    self.roadnetwork = ogr.Open(self.roadsrc)
-    self.roadlayer  = self.roadnetwork.GetLayer(0)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
-    self.blocknetwork = ogr.Open(self.blocksrc)
-    self.blocklayer  = self.blocknetwork.GetLayer(0)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
+  def __init__(self, logLevel, geoid_queue, pointlogfile, streetlogfile, odDictionary, odb, cbc):
 
-    self.sourceSpatialRef = self.roadlayer.GetSpatialRef();
-    self.targetSpatialRef = osr.SpatialReference()
-    self.targetSpatialRef.ImportFromEPSG(self.SRID)
-
-    self.transform = osr.CoordinateTransformation(self.sourceSpatialRef, self.targetSpatialRef)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
-
-#    self.roadDiGraph = nx.read_shp(self.roadsrc)
-#    end = time.time()
-#    print ("Elapsed in Streets: {}".format(end-start))
-
-    print ("DONE INITING")
-
-  def __init__(self, geoid_queue, pointlogfile, streetlogfile, odDictionary, odb, cbc):
     multiprocessing.Process.__init__(self)
+
+    print("INITING {}".format(self.name))
+
+    self.logLevel = logLevel
     self.geoid_queue = geoid_queue
     self.pointlogfile = pointlogfile
     self.streetlogfile = streetlogfile
@@ -53,7 +29,27 @@ class Streets(multiprocessing.Process):
     self.odb = odb
     self.cbc = cbc
     self.process_count = 0
-    self.__init__(self)
+
+    self.SRID = 32711  # UTM zone 11S, WGS 84
+    self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
+    self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+
+    self.roadnetwork = ogr.Open(self.roadsrc)
+    self.roadlayer = self.roadnetwork.GetLayer(0)
+    self.blocknetwork = ogr.Open(self.blocksrc)
+    self.blocklayer = self.blocknetwork.GetLayer(0)
+
+    self.sourceSpatialRef = self.roadlayer.GetSpatialRef()
+    self.targetSpatialRef = osr.SpatialReference()
+    self.targetSpatialRef.ImportFromEPSG(self.SRID)
+
+    self.transform = osr.CoordinateTransformation(self.sourceSpatialRef, self.targetSpatialRef)
+
+    #    self.roadDiGraph = nx.read_shp(self.roadsrc)
+    #    end = time.time()
+    #    print ("Elapsed in Streets: {}".format(end-start))
+
+    print("DONE INITING {}".format(self.name))
 
   def GetCountAllRoadSegments(self):
     return self.roadlayer.GetFeatureCount()
@@ -267,40 +263,49 @@ class Streets(multiprocessing.Process):
         for feature in self.roadlayer:
           print("    Feature street name: {}".format(feature.GetField("FULLNAME")))
 
+  def run(self):
 
-    def run(self):
+    print ("Starting run in {}".format(self.name))
+    while True:
 
-      while True:
+      homegeoid = self.geoid_queue.get()
 
-        homegeoid = self.geoid_queue.get()
-        censusblock = self.cbc.GetBlockCentroid(homegeoid)
-        homeGeometry = censusblock.GetGeometryRef()
-        self.process_count += 1
-        if homegeoid not in self.dictGeoIDs:
-          print("Processing Home GEO {}".format(homegeoid))
-          self.FilterNearbyStreets(logLevel, homeGeometry)
-          nearest_point_on_street, nearest_street = self.ProcessNearestStreet(logLevel, homegeoid, homeGeometry)
+      print ("Processing .....")
 
-        destinations = self.GetDestinationsGetDestinations(homegeoid)
-        for destination in destinations:
+      print ("Procesing home id {}".format(homegeoid))
 
-          destGeoID = destination[0]
+      if homegeoid is None:
+        print ("Exiting {}".format(self.name))
+        break
 
-          destfeature = self.cbc.GetBlockCentroid(destGeoID)
-          if destfeature.GetField("COUNTYFP10") == "037":
+      censusblock = self.cbc.GetBlockCentroid(homegeoid)
+      homeGeometry = censusblock.GetGeometryRef()
+      self.process_count += 1
+      if homegeoid not in self.dictGeoIDs:
+        print("Processing Home GEO {}".format(homegeoid))
+        self.FilterNearbyStreets(self.logLevel, homeGeometry)
+        nearest_point_on_street, nearest_street = self.ProcessNearestStreet(self.logLevel, homegeoid, homeGeometry)
+        self.dictGeoIDs[homegeoid] = nearest_point_on_street
 
-            if destGeoID not in self.dictGeoIDs:
-              destGeometry = destfeature.GetGeometryRef()
-              self.FilterNearbyStreets(logLevel, destGeometry)
-              nearest_point_on_street, nearest_street = self.ProcessNearestStreet(logLevel, destGeoID, destGeometry)
-              print("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
-                homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
-          else:
-            print("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
+      destinations = self.odb.GetDestinations(homegeoid)
+      for destination in destinations:
 
-            # if (n >= 20):
-            #   break
+        destGeoID = destination[0]
 
-        if (self.process_count % 10) == 0:
-          self.pointlogfile.flush()
-          self.streetlogfile.flush()
+        destfeature = self.cbc.GetBlockCentroid(destGeoID)
+        if destfeature.GetField("COUNTYFP10") == "037":
+
+          if destGeoID not in self.dictGeoIDs:
+            destGeometry = destfeature.GetGeometryRef()
+            self.FilterNearbyStreets(self.logLevel, destGeometry)
+            nearest_point_on_street, nearest_street = self.ProcessNearestStreet(self.logLevel, destGeoID, destGeometry)
+            print("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
+              homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
+            self.dictGeoIDs[destGeoID] = nearest_point_on_street
+        else:
+          print("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
+
+          # if (n >= 20):
+          #   break
+
+    return

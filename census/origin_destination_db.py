@@ -7,8 +7,13 @@ class OriginDestinationDB(CensusDB):
   tbl = 'origindestination'
 
   def GetOriginsInCounty(self, ctycode):
-    destinationSQL = "SELECT h_geocode from origindestination od join xwalk x on od.h_geocode = x.block2010 where x.cty=?"
+    destinationSQL = "SELECT distinct od.h_geocode FROM origindestination od join xwalk x on od.h_geocode = x.block2010 WHERE x.cty=?"
     result, destinations = self.select_many(destinationSQL, ctycode)
+    return destinations
+
+  def GetOriginsInZipcode(self, zctacode):
+    destinationSQL = "SELECT distinct od.h_geocode FROM origindestination od join xwalk x on od.h_geocode = x.block2010 WHERE x.zcta=?"
+    result, destinations = self.select_many(destinationSQL, zctacode)
     return destinations
 
   def GetDestinations(self, origingeoid):
@@ -17,8 +22,4 @@ class OriginDestinationDB(CensusDB):
     result, destinations = self.select_many(destinationSQL, [origingeoid])
     return destinations
 
-  def Get UniqueOrigins(self):
-    destinationSQL = "SELECT distinct h_geocode FROM origindestination"
-    result, destinations = self.select_many(destinationSQL, [origingeoid])
-    return destinations
 

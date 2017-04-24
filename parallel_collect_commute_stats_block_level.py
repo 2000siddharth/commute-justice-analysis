@@ -2,6 +2,7 @@ from osgeo import ogr
 import csv
 import sys
 import time
+import random
 from census.origin_destination_db import OriginDestinationDB
 from census.census_block_centroids_sp import CensusBlockCentroids
 from network.streets_parallel import Streets
@@ -81,6 +82,36 @@ def ProcessBlockCommute():
 
   census = None
 
+class QueueManager(multiprocessing.Process):
+
+    def __init__(self, odb, geoid_queue, pointlogfile, streetlogfile, num_processors):
+    # for censusblock in odb.GetOriginsInCounty(6037):
+        multiprocessing.Process.__init__(self)
+        self.odb = odb
+        self.geoid_queue = geoid_queue
+        self.pointlogfile = pointlogfile
+        self.streetlogfile = streetlogfile
+        self.num_processors = num_processors
+        self.process_count = 0
+
+    def run(self):
+        for censusblock in self.odb.GetOriginsInZipcode(90045):
+          if not self.geoid_queue.full():
+            print("Putting census block {}".format(censusblock[0]))
+            self.geoid_queue.put(censusblock[0])
+          else:
+            time.sleep(random.random())
+
+          self.process_count += 1
+
+          if (self.process_count % 10) == 0:
+              self.pointlogfile.flush()
+              self.streetlogfile.flush()
+
+        print ("DONE populating queue")
+        for i in range(self.num_processors):
+            self.geoid_queue.put(None)
+
 def PreProcessBlockCentroidStreetLines():
   
   pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/parallel_block_centroid_intersections.csv"
@@ -91,60 +122,54 @@ def PreProcessBlockCentroidStreetLines():
   pointlogfile.write('Geometry\tGeoID\n')
   streetlogfile.write('Geometry\tGeoID\n')
 
-  dictGeoIDs = {}
-
   odb = OriginDestinationDB()
-
   cbc = CensusBlockCentroids()
 
-  n = 0
   logLevel = 0
 
-  # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
+  # Make this multiprocesed - http://www.craigaddyman.com/python-queues-and-multi-threading/
   # https://www.tutorialspoint.com/python/python_multithreading.htm
-  # for each geoID in census blocks (use database h_geocode list, not census block shape map)
-  #   geometry = GetGeometryByGeoID(geoID)
-  #    q.put(census block geometry)
-  # def process_node ():
-  #   while not q.empty()
-  #     geometry = q.get()
-  #     streets.GetNearestStreet(logLevel, geometry)
-  #     --- how do we add to a sync'd dictionary
-  #     log the stuff
-  #     now do the same for all work nodes
-  #       -- dictionary check
-  #       log the stuff
-  #     q.task_done()
-  # Now we create the threads
-  # for i in range(10):  
-  #   tl = Thread(target = process_node)
-  #   tl.start()
-  # q.join()
 
-  home_geoids = multiprocessing.Queue
+  num_geoids = 0
+  home_geoids = multiprocessing.Queue()
   manager = multiprocessing.Manager()
-  odDictionary = manager.dict()
+  dictGeoIDs = manager.dict()
 
-  num_processors = multiprocessing.cpu_count() * 2
-  street_processors = [ Streets (logLevel, home_geoids, pointlogfile, streetlogfile, odDictionary, odb, cbc)
-                        for i in xrange(num_processors)]
+  num_processors = int(multiprocessing.cpu_count() / 2)
+  print ("Beginning with {} processors".format(num_processors))
+
+  street_processors = [ Streets (logLevel, home_geoids, pointlogfile, streetlogfile, dictGeoIDs, odb, cbc)
+                        for i in range(num_processors)]
+
+  qm = QueueManager(odb, home_geoids, pointlogfile, streetlogfile, num_processors)
+  qm.start()
+
+  time.sleep(2)
 
   for sp in street_processors:
     sp.start()
 
-  num_geoids = 0
+  for sp in street_processors:
+      print("We have Process {} which is alive {}".format(sp, sp.is_alive()))
 
-  for censusblock in odb.GetOriginsInCounty(6037):
-    home_geoids.put(censusblock)
-    num_geoids += 1
+  #  for censusblock in odb.GetOriginsInCounty(6037):
+#    home_geoids.put(censusblock[0])
+#    num_geoids += 1
+#    if num_geoids >= 20000:
+#       break
+#    if num_geoids % 1000 == 0:
+#      print ("We've put {} censusblocks using {}".format(num_geoids, censusblock[0]))
+#      for sp in street_processors:
+#        print("We have Process {}".format(sp.is_alive()))
 
-  for i in xrange(num_processors):
-    home_geoids.put(None)
+  for sp in street_processors:
+    sp.join()
 
   pointlogfile.close()
   streetlogfile.close()
 
 # ProcessBlockCommute()
 
-PreProcessBlockCentroidStreetLines()
+if __name__ == '__main__':
+  PreProcessBlockCentroidStreetLines()
 
