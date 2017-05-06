@@ -86,8 +86,8 @@ def PreProcessBlockCentroidStreetLines():
   pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
   streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
 
-  pointlogfile = open(pointlog, 'w')
-  streetlogfile = open(streetsegmentlog, 'w')
+  pointlogfile = open(pointlog, 'a')
+  streetlogfile = open(streetsegmentlog, 'a')
   pointlogfile.write('Geometry\tGeoID\n')
   streetlogfile.write('Geometry\tGeoID\n')
 
@@ -102,6 +102,8 @@ def PreProcessBlockCentroidStreetLines():
 
   streets = Streets()
 
+  dictGeoIDs = odb.GetProcessedGeoID()
+
   dctDistances = {}
 
   # censuslayer.SetAttributeFilter ("COUNTYFP10='037' and (GEOID10='060372077101020' or GEOID10='060372085022002')")
@@ -112,25 +114,8 @@ def PreProcessBlockCentroidStreetLines():
   logLevel = 0
 
   # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
-  # https://www.tutorialspoint.com/python/python_multithreading.htm
-  # for each geoID in census blocks (use database h_geocode list, not census block shape map)
-  #   geometry = GetGeometryByGeoID(geoID)
-  #    q.put(census block geometry)
-  # def process_node ():
-  #   while not q.empty()
-  #     geometry = q.get()
-  #     streets.GetNearestStreet(logLevel, geometry)
-  #     --- how do we add to a sync'd dictionary
-  #     log the stuff
-  #     now do the same for all work nodes
-  #       -- dictionary check
-  #       log the stuff
-  #     q.task_done()
-  # Now we create the threads
-  # for i in range(10):  
-  #   tl = Thread(target = process_node)
-  #   tl.start()
-  # q.join()
+  # I took a stabe at this with parallel_collect_commute_stats_block_level but ran into
+  # some concurrency issues with the osgeo layer object - will revisit at some point
   for censusblock in censuslayer:
     n = n + 1
     homegeoid = censusblock.GetField("GEOID10")
@@ -142,33 +127,34 @@ def PreProcessBlockCentroidStreetLines():
       streets.FilterNearbyStreets(logLevel, homeGeometry)
       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
       if nearest_point_on_street != None:
-        dictGeoIDs[homegeoid] = nearest_point_on_street
+        dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')'
         pointlogfile.write('POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
         streetlogfile.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' + 
              str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
+    else:
+      print("Already processed {}".format(homegeoid))
+    #for destination in destinations:
 
-    for destination in destinations:
+     # destGeoID = destination[0]
 
-      destGeoID = destination[0]
+      #destfeature = cbc.GetBlockCentroid(destGeoID)
+      #if destfeature.GetField("COUNTYFP10") == "037":
 
-      destfeature = cbc.GetBlockCentroid(destGeoID)
-      if destfeature.GetField("COUNTYFP10") == "037":
-
-        if destGeoID not in dictGeoIDs:
-          destGeometry = destfeature.GetGeometryRef()
-          streets.FilterNearbyStreets(logLevel, destGeometry)
-          nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, destGeometry)
-          print ("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
-            homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
-          if nearest_point_on_street != None:
-            dictGeoIDs[destGeoID] = nearest_point_on_street
-            nearestStreetX = nearest_point_on_street.GetX()
-            nearestStreetY = nearest_point_on_street.GetY()
-            pointlogfile.write('POINT (' + str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
-            streetlogfile.write('LINESTRING (' + str(destGeometry.GetX()) + ' ' +  str(destGeometry.GetY()) + ',' +
-                str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
-      else:
-        print ("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
+#        if destGeoID not in dictGeoIDs:
+ #         destGeometry = destfeature.GetGeometryRef()
+  #        streets.FilterNearbyStreets(logLevel, destGeometry)
+   #       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, destGeometry)
+    #      print ("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
+     #       homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
+      #    if nearest_point_on_street != None:
+  #          dictGeoIDs[destGeoID] = nearest_point_on_street
+   #         nearestStreetX = nearest_point_on_street.GetX()
+    #        nearestStreetY = nearest_point_on_street.GetY()
+     #       pointlogfile.write('POINT (' + str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
+      #      streetlogfile.write('LINESTRING (' + str(destGeometry.GetX()) + ' ' +  str(destGeometry.GetY()) + ',' +
+       #         str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
+   #   else:
+    #    print ("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
 
    # if (n >= 20):
    #   break

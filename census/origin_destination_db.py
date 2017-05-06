@@ -22,4 +22,11 @@ class OriginDestinationDB(CensusDB):
     result, destinations = self.select_many(destinationSQL, [origingeoid])
     return destinations
 
+  def GetProcessedGeoID(self):
+    geoidsSQL = "SELECT geoid, geometry FROM block_centroid_intersection"
+    result, geoids = self.select_many(geoidsSQL)
+    geoidDict = {}
+    for geoidsgeometry in geoids:
+      geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
+    return geoidDict
 

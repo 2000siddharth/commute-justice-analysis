@@ -6,11 +6,9 @@ from shapely.geometry import base, point, shape
 from math import sqrt
 from sys import maxsize
 from itertools import tee
-import Queue
-from threading import Thread
 
 # https://pymotw.com/2/threading/
-class Streets(Thread):
+class Streets():
 
 #  OGRSpatialReference oSRS
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )

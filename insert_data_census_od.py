@@ -17,4 +17,4 @@ with open(odsrc, mode='r') as infile:
       odb.commit()
     insert = "INSERT INTO origindestination values (?,?,?,?,?,?,?,?,?,?,?,?)"
     odb.insert(insert, row[:12])
-    
+odb.commit()

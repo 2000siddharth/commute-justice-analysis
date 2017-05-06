@@ -44,29 +44,25 @@ class CensusDB():
 
   # Select many records 
   # Return a
-  def select_many(self, sql_statement):
+  def select_many(self, *args):
 #    try:
-    self.cur.execute(sql_statement)
-    all_data = self.cur.fetchall()
-    return 0, all_data
-#    except:
-#      -1, "Error selecting data"
-
-  # Select many records given some parameters 
-  # Return a
-  def select_many(self, sql_statement, params):
-    try:
-      self.cur.execute(sql_statement, (params,))
+    if len(args) == 1:
+      self.cur.execute(args[0])
       all_data = self.cur.fetchall()
       return 0, all_data
-    except NameError:
-      print ("Name Error")
-    except ValueError:
-      print ("parameters are of unsupported type")
-    except IOError:
-      print ("IO error")
-    except:
-      return -1, "Error selecting data"
+    elif len(args) == 2:
+      try:
+        self.cur.execute(args[0], (args[1],))
+        all_data = self.cur.fetchall()
+        return 0, all_data
+      except NameError:
+        print("Name Error")
+      except ValueError:
+        print("parameters are of unsupported type")
+      except IOError:
+        print("IO error")
+      except:
+        return -1, "Error selecting data"
 
   def select_one(self, sql_statement):
     try:
