@@ -83,11 +83,11 @@ def ProcessBlockCommute():
 
 def PreProcessBlockCentroidStreetLines():
   
-  pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
-  streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
+  pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections_extend.csv"
+  streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors_extend.csv"
 
-  pointlogfile = open(pointlog, 'a')
-  streetlogfile = open(streetsegmentlog, 'a')
+  pointlogfile = open(pointlog, 'w')
+  streetlogfile = open(streetsegmentlog, 'w')
   pointlogfile.write('Geometry\tGeoID\n')
   streetlogfile.write('Geometry\tGeoID\n')
 
@@ -102,7 +102,7 @@ def PreProcessBlockCentroidStreetLines():
 
   streets = Streets()
 
-  dictGeoIDs = odb.GetProcessedGeoID()
+  dictGeoIDs = odb.GetProcessedGeoIDExtend()
 
   dctDistances = {}
 
@@ -118,14 +118,19 @@ def PreProcessBlockCentroidStreetLines():
   # some concurrency issues with the osgeo layer object - will revisit at some point
   for censusblock in censuslayer:
     n = n + 1
+
+    if (n % 2000) == 0:
+      print ("Processed {}".format(str(n)))
+
     homegeoid = censusblock.GetField("GEOID10")
     homeGeometry = censusblock.GetGeometryRef()
 
     destinations = odb.GetDestinations(homegeoid)
     if homegeoid not in dictGeoIDs:
-      print("Processing Home GEO {}".format(homegeoid))
+      # print("Processing Home GEO {}".format(homegeoid))
       streets.FilterNearbyStreets(logLevel, homeGeometry)
       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
+      nearest_point_on_street = streets.ExtendLine(homeGeometry, nearest_point_on_street, 0.0000005)
       if nearest_point_on_street != None:
         dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')'
         pointlogfile.write('POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')

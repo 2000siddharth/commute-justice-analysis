@@ -1,7 +1,7 @@
 from osgeo import ogr, osr
 import networkx as nx
 import numpy as np
-import time
+import time, os
 from shapely.geometry import base, point, shape
 from math import sqrt
 from sys import maxsize
@@ -158,6 +158,80 @@ class Streets():
         ls.AddPoint(pnt[0], pnt[1])
     return ls
 
+
+  # Create a copy of a shapefile, adding the new name
+  # suffix at the end of the file name
+  def CreateNewLayer(self, existingFile, suffix):
+
+    inDriver = ogr.GetDriverByName("ESRI Shapefile")
+    inDataSource = inDriver.Open(existingFile, 0)
+    inLayer = inDataSource.GetLayer()
+
+    outShapeFile = existingFile.replace(".shp", suffix + ".shp")
+    outDriver = ogr.GetDriverByName("ESRI Shapefile")
+
+    # Remove output shapefile if it already exists
+    if os.path.exists(outShapeFile):
+        outDriver.DeleteDataSource(outShapeFile)
+
+    # Create the output shapefile
+    outDataSource = outDriver.CreateDataSource(outShapeFile)
+    out_lyr_name = os.path.splitext( os.path.split( outShapeFile )[1] )[0]
+    outLayer = outDataSource.CreateLayer( out_lyr_name, geom_type=ogr.wkbLineString )
+
+    inLayerDefn = inLayer.GetLayerDefn()
+    for i in range(0, inLayerDefn.GetFieldCount()):
+        fieldDefn = inLayerDefn.GetFieldDefn(i)
+        fieldName = fieldDefn.GetName()
+        outLayer.CreateField(fieldDefn)
+
+
+    return outLayer
+
+  # Remove dangles as those street segments < dangleLength long.
+  # Can't seem to find a simple method through either a spatial filter,
+  # attribute filter or other means to do this in a simple call.  Seems
+  # I need to iterate over every feature in the network, identify
+  # those >= dangleLength and add them to a new network set...
+  def RemoveDangles(self, dangleLength):
+
+    inDriver = ogr.GetDriverByName("ESRI Shapefile")
+    inDataSource = inDriver.Open(self.roadsrc, 0)
+    inLayer = inDataSource.GetLayer()
+
+    newNetworkLayer = self.CreateNewLayer(self.roadsrc, "trimmed")
+
+    # Get the output Layer's Feature Definition
+    newNetworkLayerDefn = newNetworkLayer.GetLayerDefn()
+
+    # Add features to the ouput Layer
+    for inFeature in inLayer:
+        # If the feature is > dangleLength, we'll recreate it, otherwise, drop it
+        featureLength = self.GetProjectedLength(inFeature.GetGeometryRef())
+        if featureLength > dangleLength:
+          # Create output Feature
+          outFeature = ogr.Feature(newNetworkLayerDefn)
+
+          # Add field values from input Layer
+          for i in range(0, newNetworkLayerDefn.GetFieldCount()):
+              fieldDefn = newNetworkLayerDefn.GetFieldDefn(i)
+              fieldName = fieldDefn.GetName()
+
+              outFeature.SetField(newNetworkLayerDefn.GetFieldDefn(i).GetNameRef(),
+                  inFeature.GetField(i))
+
+          # Set geometry as centroid
+          geom = inFeature.GetGeometryRef()
+          outFeature.SetGeometry(geom.Clone())
+          # Add new feature to output Layer
+          newNetworkLayer.CreateFeature(outFeature)
+          outFeature = None
+        else:
+          print("We have a length of {}".format(str(featureLength)))
+    # Save and close DataSources
+    inDataSource = None
+    outDataSource = None
+
   # Tried using QGIS but only supports python 2.N
   # Found this solution recommended here http://gis.stackexchange.com/a/150409/94363
   # With implementation here:  http://gis.stackexchange.com/a/81824/94363
@@ -212,6 +286,14 @@ class Streets():
     if logLevel >= 1:
       print ("    Nearest point for {} found at {} from lineSegment {} with a min_dist {}".format(pntSource, nearest_point, nearestSegment, min_dist))
     return nearest_point, nearest_street
+
+  def ExtendLine (self, startPoint, endPoint, length):
+    lenAB = sqrt(pow(startPoint.GetX() - endPoint.GetX(), 2.0) + pow(startPoint.GetY() - endPoint.GetY(), 2.0))
+    newPoint = ogr.Geometry(ogr.wkbPoint)
+    newPoint.AddPoint( endPoint.GetX() + (endPoint.GetX() - startPoint.GetX()) / lenAB * length,
+                       endPoint.GetY() + (endPoint.GetY() - startPoint.GetY()) / lenAB * length)
+
+    return newPoint
 
   # Given a source point feature, find the streets that are closest
   # to that point, starting a 100 meters, moving out until a set

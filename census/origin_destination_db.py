@@ -30,3 +30,11 @@ class OriginDestinationDB(CensusDB):
       geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
     return geoidDict
 
+  def GetProcessedGeoIDExtend(self):
+    geoidsSQL = "SELECT geoid, geometry FROM block_centroid_intersection_extend"
+    result, geoids = self.select_many(geoidsSQL)
+    geoidDict = {}
+    for geoidsgeometry in geoids:
+      geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
+    return geoidDict
+

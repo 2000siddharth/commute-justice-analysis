@@ -1,6 +1,7 @@
 from osgeo import ogr
 from osgeo import osr
-from osgeo import gdal
+import geopandas as gpd
+import pandas as pd
 import csv
 import sys
 import time
@@ -82,34 +83,41 @@ def CountLayerFeatures(layer):
   print ("There are {} features in {}".format(str(featureCount), layer.GetName()))
 
 def UnionBlockCentroidStreetLines():
-  
+
+  ogr.UseExceptions()
+
+  print("Loading Census Roads")
 
   censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-  censusStreets = ogr.Open(censusstreetlayersrc, 0)
-  censuslayer = censusStreets.GetLayer()
+  censusLayer = gpd.read_file(censusstreetlayersrc)
+#  censusStreets = ogr.Open(censusstreetlayersrc, 0)
+#  censuslayer = censusStreets.GetLayer()
 
   connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
   # CreateShapeFromCSV(connectorlayersrc)
 
-  CountLayerFeatures(censuslayer)
+  # CountLayerFeatures(censusLayer)
 
-  connectorStreets = ogr.Open(connectorlayersrc.replace(".csv", ".shp"), 0)
-  connectorLayer = connectorStreets.GetLayer()
+  print("Loading Connectors")
+  # connectorStreets = ogr.Open(connectorlayersrc.replace(".csv", ".shp"), 0)
+  connectorLayer = gpd.read_file(connectorlayersrc.replace(".csv", ".shp")) # connectorStreets.GetLayer()
 
-  CountLayerFeatures(connectorLayer)
+  # CountLayerFeatures(connectorLayer)
 
-  outputLayer = CreateNewShapeLayer(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
+  # outputLayer = CreateNewShapeLayer(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
 
-  print("About to union the layers")
+  print("About to merge the layers")
 
-  censuslayer.Union(connectorLayer, outputLayer)
+  mergedStreets = pd.concat([censusLayer, connectorLayer], ignore_index=True)
+  # CountLayerFeatures(mergedStreets)
+  mergedStreets.to_file(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
+  # censuslayer.Union(connectorLayer, outputLayer)
 
   print("Unioned Layers")
 
-  CountLayerFeatures(outputLayer)
+  # CountLayerFeatures(outputLayer)
 
-  outputLayer = None
-  censuslayer = None
+  censusLayer = None
   connectorLayer = None
 
 UnionBlockCentroidStreetLines()
