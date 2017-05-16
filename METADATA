@@ -1,0 +1,30 @@
+title: Python network preprocessing and routing optimization package
+
+abstract: A collection of Python scripts that pre-process open street map, census and
+DTED data to enable shortest route, slope (cost) and other network
+analysis.
+
+Using a combination of GDAL, shapely, networkx and possibly GRASS packages
+to get nearest lines to points, project lines onto points, break lines at
+intersections, remove dangles and other operations possible in QGIS, ArcGIS
+and other GUI-based desktop applications, working to build a completely
+automated and free system for doing some basic network analysis such
+as routing optimization in Python.
+
+contributors:  Aaron Kofner, Cord Thomas
+
+ptns:  ISX17-9103
+
+software:  Python, shapely, netowrkx, GDAL, GRASS
+
+description:  Beyond what is stated in the abstract above, this package
+is developed to be able to assess the impact in total transportation costs, 
+energy savings, carbon emission reductions in the use of terrain as a 
+determinator of commuting patterns and then eventually compare that to 
+alternative transportation including EVs, buses, etc.  This work is derived
+from work done for the Army by Kyle Silver-Evans, John Matsumura, 
+Endy Daehner
+
+subject:  network routing, optimization, energy consumption, sustainability
+
+units:  JIE, Arroyo
