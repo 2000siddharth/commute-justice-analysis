@@ -1,4 +1,6 @@
 from osgeo import ogr, osr
+from grass.lib import grass
+
 import networkx as nx
 import numpy as np
 import time, os
