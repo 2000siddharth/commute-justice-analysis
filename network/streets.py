@@ -1,10 +1,9 @@
 from osgeo import ogr, osr
-from grass.lib import grass
 
 import networkx as nx
 import numpy as np
 import time, os
-from shapely.geometry import base, point, shape
+from shapely.geometry import Point
 from math import sqrt
 from sys import maxsize
 from itertools import tee
@@ -80,7 +79,7 @@ class Streets():
   # assume that the points are on the network but that
   # they are in the vicinity of the network (within 100 meters)
   def GetShortestRoute(self, srcPoint, dstPoint):
-    nearest_point_on_street, nearest_street = self.GetNearestStreet(srcPoint)
+    nearest_point_on_street, nearest_street = self.GetNearestStreet(1, srcPoint)
     i = 0
     for n in self.roadDiGraph.edges():
        # print ("graph entry {} of type {}".format(n, type(n)))
@@ -307,16 +306,20 @@ class Streets():
     if logLevel == 1:
       print ("Point source X and Y: {}, {}".format(str(pntSource.GetX()), str(pntSource.GetY())))
     
-    shpPoint = point.Point(pntSource.GetX(), pntSource.GetY())
+    shpPoint = Point(pntSource.GetX(), pntSource.GetY())
     
     enoughSegments = False
     bufferSize = 0.001
 
     while (enoughSegments != True):
+
+      if logLevel == 1:
+        print ("About to buffer {} of size {}".format(shpPoint, bufferSize))
+
       buffer = shpPoint.buffer(bufferSize)
 
       if logLevel == 1:
-        if bufferSize > 0.001:
+        if bufferSize >= 0.001:
           print ("We're at buffer size {} for {}".format(bufferSize, pntSource))
 
       ring = ogr.Geometry(ogr.wkbLinearRing)
@@ -324,7 +327,9 @@ class Streets():
         ring.AddPoint(bufferedPoint[0], bufferedPoint[1])
       ogrPoly = ogr.Geometry(ogr.wkbPolygon)
       ogrPoly.AddGeometry(ring)
+      print ("About to set spatial filter")
       self.roadlayer.SetSpatialFilter(ogrPoly)
+      print ("Set spatial filter!")
 
       enoughSegments = (self.roadlayer.GetFeatureCount() > 1)
       bufferSize = bufferSize + 0.0005

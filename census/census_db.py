@@ -61,7 +61,8 @@ class CensusDB():
         print("parameters are of unsupported type")
       except IOError:
         print("IO error")
-      except:
+      except Exception as e:
+        print ("Error is {}".format(e))
         return -1, "Error selecting data"
 
   def select_one(self, sql_statement):

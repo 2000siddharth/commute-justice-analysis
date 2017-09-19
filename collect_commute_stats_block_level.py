@@ -9,9 +9,7 @@ from network.streets import Streets
 
 # From http://gis.stackexchange.com/questions/7436/how-to-add-attribute-field-to-existing-shapefile-via-python-without-arcgis?rq=1
 
-# censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10.shp"
-# censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
-censussrc = "/Users/cthomas/Development/Data/spatial/Census/los_angeles_block_centroids.shp"
+censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
 
 odDictionary = {}
 
@@ -54,8 +52,6 @@ def ProcessBlockCommute():
   streets = Streets()
 
   dctDistances = {}
-
-  censuslayer.SetAttributeFilter ("COUNTYFP10='037'")
  
   n = 0
   for censusblock in censuslayer:
@@ -81,98 +77,95 @@ def ProcessBlockCommute():
 
   census = None
 
-def PreProcessBlockCentroidStreetLines():
-  
-  pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
-  streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
-
-  pointlogfile = open(pointlog, 'a')
-  streetlogfile = open(streetsegmentlog, 'a')
-  pointlogfile.write('Geometry\tGeoID\n')
-  streetlogfile.write('Geometry\tGeoID\n')
-
-  dictGeoIDs = {}
-
-  census = ogr.Open(censussrc, 0)
-  censuslayer = census.GetLayer()
-
-  odb = OriginDestinationDB()
-
-  cbc = CensusBlockCentroids()
-
-  streets = Streets()
-
-  dictGeoIDs = odb.GetProcessedGeoID()
-
-  dctDistances = {}
-
-  # censuslayer.SetAttributeFilter ("COUNTYFP10='037' and (GEOID10='060372077101020' or GEOID10='060372085022002')")
-  # censuslayer.SetAttributeFilter ("COUNTYFP10='037' and GEOID10='060371235201000'")
-  censuslayer.SetAttributeFilter ("COUNTYFP10='037'")
-
-  n = 0
-  logLevel = 0
-
-  # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
-  # I took a stabe at this with parallel_collect_commute_stats_block_level but ran into
-  # some concurrency issues with the osgeo layer object - will revisit at some point
-  for censusblock in censuslayer:
-    n = n + 1
-    homegeoid = censusblock.GetField("GEOID10")
-    homeGeometry = censusblock.GetGeometryRef()
-
-    destinations = odb.GetDestinations(homegeoid)
-    if homegeoid not in dictGeoIDs:
-      print("Processing Home GEO {}".format(homegeoid))
-      streets.FilterNearbyStreets(logLevel, homeGeometry)
-      nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
-      if nearest_point_on_street != None:
-        dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')'
-        pointlogfile.write('POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
-        streetlogfile.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' + 
-             str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
-    else:
-      print("Already processed {}".format(homegeoid))
-    #for destination in destinations:
-
-     # destGeoID = destination[0]
-
-      #destfeature = cbc.GetBlockCentroid(destGeoID)
-      #if destfeature.GetField("COUNTYFP10") == "037":
-
-#        if destGeoID not in dictGeoIDs:
- #         destGeometry = destfeature.GetGeometryRef()
-  #        streets.FilterNearbyStreets(logLevel, destGeometry)
-   #       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, destGeometry)
-    #      print ("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
-     #       homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
-      #    if nearest_point_on_street != None:
-  #          dictGeoIDs[destGeoID] = nearest_point_on_street
-   #         nearestStreetX = nearest_point_on_street.GetX()
-    #        nearestStreetY = nearest_point_on_street.GetY()
-     #       pointlogfile.write('POINT (' + str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
-      #      streetlogfile.write('LINESTRING (' + str(destGeometry.GetX()) + ' ' +  str(destGeometry.GetY()) + ',' +
-       #         str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
-   #   else:
-    #    print ("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
-
-   # if (n >= 20):
-   #   break
-
-    if (n % 10) == 0:
-      pointlogfile.flush()
-      streetlogfile.flush()
-
-  census = None
-  pointlogfile.close()
-  streetlogfile.close()
-  
-# BuildOriginDestinationDictionary()
-
-# print ("The en
-#  for our block is {}".format(odDictionary["060372760001009"]))
-
-# ProcessBlockCommute()
-
-PreProcessBlockCentroidStreetLines()
-
+### OBE DO NOT USE THIS !!!!!!!!!!!!!!   Use _with_extend instead
+#
+# def PreProcessBlockCentroidStreetLines():
+#
+#   pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
+#   streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
+#
+#   pointlogfile = open(pointlog, 'a')
+#   streetlogfile = open(streetsegmentlog, 'a')
+#   pointlogfile.write('Geometry\tGeoID\n')
+#   streetlogfile.write('Geometry\tGeoID\n')
+#
+#   dictGeoIDs = {}
+#
+#   census = ogr.Open(censussrc, 0)
+#   censuslayer = census.GetLayer()
+#
+#   odb = OriginDestinationDB()
+#
+#   cbc = CensusBlockCentroids()
+#
+#   streets = Streets()
+#
+#   dictGeoIDs = odb.GetProcessedGeoID()
+#
+#   dctDistances = {}
+#   n = 0
+#   logLevel = 0
+#
+#   # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
+#   # I took a stabe at this with parallel_collect_commute_stats_block_level but ran into
+#   # some concurrency issues with the osgeo layer object - will revisit at some point
+#   for censusblock in censuslayer:
+#     n = n + 1
+#     homegeoid = censusblock.GetField("GEOID10")
+#     homeGeometry = censusblock.GetGeometryRef()
+#
+#     destinations = odb.GetDestinations(homegeoid)
+#     if homegeoid not in dictGeoIDs:
+#       print("Processing Home GEO {}".format(homegeoid))
+#       streets.FilterNearbyStreets(logLevel, homeGeometry)
+#       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
+#       if nearest_point_on_street != None:
+#         dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')'
+#         pointlogfile.write('POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
+#         streetlogfile.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' +
+#              str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
+#     else:
+#       print("Already processed {}".format(homegeoid))
+#     #for destination in destinations:
+#
+#      # destGeoID = destination[0]
+#
+#       #destfeature = cbc.GetBlockCentroid(destGeoID)
+#       #if destfeature.GetField("COUNTYFP10") == "037":
+#
+# #        if destGeoID not in dictGeoIDs:
+#  #         destGeometry = destfeature.GetGeometryRef()
+#   #        streets.FilterNearbyStreets(logLevel, destGeometry)
+#    #       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, destGeometry)
+#     #      print ("   For Home GOEID {}:: Dest GEOID {},  we found Nearest Pt [{}] on street {}".format(
+#      #       homegeoid, destGeoID, nearest_point_on_street, nearest_street.GetField("FULLNAME")))
+#       #    if nearest_point_on_street != None:
+#   #          dictGeoIDs[destGeoID] = nearest_point_on_street
+#    #         nearestStreetX = nearest_point_on_street.GetX()
+#     #        nearestStreetY = nearest_point_on_street.GetY()
+#      #       pointlogfile.write('POINT (' + str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
+#       #      streetlogfile.write('LINESTRING (' + str(destGeometry.GetX()) + ' ' +  str(destGeometry.GetY()) + ',' +
+#        #         str(nearestStreetX) + ' ' + str(nearestStreetY) + ')\t\'' + destGeoID + '\'\n')
+#    #   else:
+#     #    print ("Destination outside of LA County: {} for {}".format(destfeature.GetField("COUNTYFP10"), homegeoid))
+#
+#    # if (n >= 20):
+#    #   break
+#
+#     if (n % 10) == 0:
+#       pointlogfile.flush()
+#       streetlogfile.flush()
+#
+#   census = None
+#   pointlogfile.close()
+#   streetlogfile.close()
+#
+# # BuildOriginDestinationDictionary()
+#
+# # print ("The en
+# #  for our block is {}".format(odDictionary["060372760001009"]))
+#
+# # ProcessBlockCommute()
+#
+# PreProcessBlockCentroidStreetLines()
+#

@@ -4,10 +4,6 @@ import geopandas as gpd
 import pandas as pd
 import csv
 import sys
-import time
-from census.origin_destination_db import OriginDestinationDB
-from census.census_block_centroids_sp import CensusBlockCentroids
-from network.streets import Streets
 
 # Intersect the census provided streets with the census block centroid street connectors
 # http://gdal.org/python/osgeo.ogr.Layer-class.html#Union
@@ -63,62 +59,51 @@ def CreateShapeFromCSV(csvFileName):
 
   print ("Processed {} segments".format(str(n)))
 
-def CreateNewShapeLayer(shapeName):
-  print ("Creating layer {}".format(shapeName))
-  driver = ogr.GetDriverByName("ESRI Shapefile")
-  data_source = driver.CreateDataSource(shapeName)
-
-  # create the spatial reference, WGS84
-  srs = osr.SpatialReference()
-  srs.ImportFromEPSG(4326)
-
-  # create the layer
-  layer = data_source.CreateLayer(shapeName.rsplit("/", 1)[-1], srs, ogr.wkbLineString)
-  print ("Created layer {}".format(shapeName))
-
-  return layer
-
 def CountLayerFeatures(layer):
   featureCount = layer.GetFeatureCount()
   print ("There are {} features in {}".format(str(featureCount), layer.GetName()))
 
-def UnionBlockCentroidStreetLines():
+# Merge the LA County street lines with the block centroid connector lines
+# to create a single dataset of all street segments and connector approximations
+# to be used in block-level network routing.
+def UnionBlockCentroidStreetLines(execute_level):
 
   ogr.UseExceptions()
 
-  print("Loading Census Roads")
-
   censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-  censusLayer = gpd.read_file(censusstreetlayersrc)
-#  censusStreets = ogr.Open(censusstreetlayersrc, 0)
-#  censuslayer = censusStreets.GetLayer()
-
   connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
-  # CreateShapeFromCSV(connectorlayersrc)
+  census_layer = gpd.read_file(censusstreetlayersrc)
 
-  # CountLayerFeatures(censusLayer)
+  if (execute_level == '1' or execute_level == '3'):
+    print("Creating connectors from CSV")
+    CreateShapeFromCSV(connectorlayersrc)
 
-  print("Loading Connectors")
-  # connectorStreets = ogr.Open(connectorlayersrc.replace(".csv", ".shp"), 0)
-  connectorLayer = gpd.read_file(connectorlayersrc.replace(".csv", ".shp")) # connectorStreets.GetLayer()
+  if (execute_level == '2' or execute_level == '3'):
+    print("Merging connectors with LA streets")
+    connector_layer = gpd.read_file(connectorlayersrc.replace(".csv", ".shp"))
+    mergedStreets = pd.concat([census_layer, connector_layer], ignore_index=True)
+    # CountLayerFeatures(mergedStreets)
+    mergedStreets.to_file(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
 
-  # CountLayerFeatures(connectorLayer)
+  census_layer = None
+  connector_layer = None
 
-  # outputLayer = CreateNewShapeLayer(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
+def main(argv):
 
-  print("About to merge the layers")
+  print ("Length {} of args {}", len(sys.argv), sys.argv[1])
 
-  mergedStreets = pd.concat([censusLayer, connectorLayer], ignore_index=True)
-  # CountLayerFeatures(mergedStreets)
-  mergedStreets.to_file(censusstreetlayersrc.rsplit("/", 1)[0] + "/la_streets_with_block_centroid_connectors.shp")
-  # censuslayer.Union(connectorLayer, outputLayer)
+  if (len(sys.argv) != 2):
 
-  print("Unioned Layers")
+    print ("You must provide the run configuration.\n" +
+           "Valid integer values include\n" +
+           "  1: run just the block centroid CSV to Shape\n" +
+           "  2: run 1 and merge the centroid connectors with the LA streets\n" +
+           "  3: run both 1 and 2")
 
-  # CountLayerFeatures(outputLayer)
+  else:
 
-  censusLayer = None
-  connectorLayer = None
+    UnionBlockCentroidStreetLines (sys.argv[1])
 
-UnionBlockCentroidStreetLines()
 
+if __name__ == "__main__":
+  main(sys.argv[1:])
