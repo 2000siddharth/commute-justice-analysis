@@ -41,7 +41,6 @@ def ProcessBlockCommutes():
       destGeometry = destfeature.GetGeometryRef()
 
       shortestroute = streets.GetShortestRoute(homeGeometry, destGeometry)
-      # print ("Shortest route is {}".format(shortestroute))
 
     if n >= 10:
       break;

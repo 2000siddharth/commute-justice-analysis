@@ -71,7 +71,7 @@ def UnionBlockCentroidStreetLines(execute_level):
   ogr.UseExceptions()
 
   censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-  connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
+  connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors_extend.csv"
   census_layer = gpd.read_file(censusstreetlayersrc)
 
   if (execute_level == '1' or execute_level == '3'):

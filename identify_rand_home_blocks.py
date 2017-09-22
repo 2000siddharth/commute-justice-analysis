@@ -149,6 +149,7 @@ def CreateGeoIDQueryClause (origins):
 
     return clause
 
+# Did not finish implementation of this...
 def ProcessOriginDestinationBlocksWithQuery (w_geoid):
     odb = OriginDestinationDB()
 
@@ -215,9 +216,6 @@ def main(argv):
   else:
 
       ProcessOriginDestinationBlocks (sys.argv[1])
-
-      # ProcessOriginDestinationBlocksWithQuery (sys.argv[1])
-
 
 if __name__ == "__main__":
   main(sys.argv[1:])
