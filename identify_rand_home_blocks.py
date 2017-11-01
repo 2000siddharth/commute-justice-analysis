@@ -110,7 +110,6 @@ def ProcessOriginDestinationBlocks(w_geoid):
     # print ("Getting RAND Layer Def of type {} with name ".format(type(source_layer), source_layer.GetName()))
 
     new_layerDefn = new_layer.GetLayerDefn()
-    # new_layerDefn = new_layer.GetLayerDefn()
 
     print ("Ready to Loop It")
 
