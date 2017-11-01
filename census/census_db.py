@@ -18,6 +18,7 @@ class CensusDB():
   def exec(self, sql_statement):
     try:
       self.cur.execute(sql_statement)
+      self.conn.commit()
     except sqlite3.IntegrityError:
       return -1, "Primary Key Violation"
     return 0, "Success"
@@ -28,6 +29,7 @@ class CensusDB():
   def exec(self, sql_statement, params):
     try:
       self.cur.execute(sql_statement, params)
+      self.conn.commit()
     except sqlite3.IntegrityError:
       return -1, "Primary Key Violation"
     return 0, "Success"

@@ -2,8 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="83133c1e-c16c-4f49-a3d6-568011ad5cce" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_intersections.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/calculate_shortest_routes.py" afterPath="$PROJECT_DIR$/calculate_shortest_routes.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/census/census_db.py" afterPath="$PROJECT_DIR$/census/census_db.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/census/origin_destination_db.py" afterPath="$PROJECT_DIR$/census/origin_destination_db.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py" afterPath="$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/identify_rand_home_blocks.py" afterPath="$PROJECT_DIR$/identify_rand_home_blocks.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/network/streets.py" afterPath="$PROJECT_DIR$/network/streets.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/union_streets_connectors.py" afterPath="$PROJECT_DIR$/union_streets_connectors.py" />
@@ -17,7 +21,9 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/roeda$intersect_streets_connectors.coverage" NAME="intersect_streets_connectors Coverage Results" MODIFIED="1506356280522" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/roeda$identify_rand_home_blocks.coverage" NAME="identify_rand_home_blocks Coverage Results" MODIFIED="1505515621911" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/roeda$calculate_shortest_routes.coverage" NAME="calculate_shortest_routes Coverage Results" MODIFIED="1506196492884" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/roeda$collect_commute_stats_block_level_with_extend.coverage" NAME="collect_commute_stats_block_level_with_extend Coverage Results" MODIFIED="1505923113789" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="FileEditorManager">
@@ -25,8 +31,8 @@
       <file leaf-file-name="collect_commute_stats_block_level_with_extend.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="540">
-              <caret line="36" column="41" lean-forward="false" selection-start-line="36" selection-start-column="41" selection-end-line="36" selection-end-column="41" />
+            <state relative-caret-position="15">
+              <caret line="53" column="2" lean-forward="false" selection-start-line="53" selection-start-column="2" selection-end-line="53" selection-end-column="21" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
               </folding>
@@ -34,25 +40,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="calculate_shortest_routes.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/calculate_shortest_routes.py">
+      <file leaf-file-name="union_streets_connectors.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/union_streets_connectors.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="22" column="17" lean-forward="false" selection-start-line="22" selection-start-column="17" selection-end-line="22" selection-end-column="17" />
+            <state relative-caret-position="316">
+              <caret line="379" column="4" lean-forward="false" selection-start-line="379" selection-start-column="6" selection-end-line="381" selection-end-column="98" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="streets.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/network/streets.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="20" column="117" lean-forward="false" selection-start-line="20" selection-start-column="117" selection-end-line="20" selection-end-column="117" />
-              <folding>
-                <element signature="e#0#26#0" expanded="true" />
+                <element signature="e#745#2132#0" expanded="false" />
+                <element signature="e#10713#12144#0" expanded="false" />
+                <element signature="e#24208#26562#0" expanded="false" />
+                <element signature="e#26589#27359#0" expanded="false" />
+                <marker date="1509561600000" expanded="true" signature="14651:15305" ph="..." />
+                <marker date="1509561600000" expanded="true" signature="14651:15384" ph="..." />
               </folding>
             </state>
           </provider>
@@ -69,41 +69,42 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>street_segment_block_centroid</find>
-      <find>streets</find>
-      <find>GetDestinations</find>
+      <find>min_</find>
+      <find>FilterNearbyStreets</find>
+      <find>roadl</find>
+      <find>has</find>
+      <find>Geometry Length</find>
+      <find>CreateShapeFromCSV</find>
+      <find>CountLayerFeatures</find>
+      <find>extend</find>
+      <find>None</find>
+      <find>index</find>
+      <find>multili</find>
+      <find>LineSegmentCount</find>
+      <find>FilterNe</find>
       <find>Streets</find>
-      <find>ProcessBlockCommute</find>
-      <find>GEOID10</find>
-      <find>GetNearestStreet</find>
-      <find>working on</find>
-      <find>workign</find>
-      <find>filter</find>
-      <find>add</find>
-      <find>SetAttributeFilter</find>
-      <find>replace</find>
-      <find>randtarget</find>
-      <find>source_layer</find>
-      <find>origin</find>
-      <find>ALAND10</find>
-      <find>AWATER10</find>
-      <find>tl_2016_los_angeles_blocks</find>
-      <find>centroid</find>
-      <find>street_segment_block_centroid_connectors</find>
-      <find>CreateNewShapeLayer</find>
-      <find>new_block_centroid_intersections_extend</find>
-      <find>censussrc</find>
-      <find>BuildOriginDestinationDictionary</find>
-      <find>odDictionary</find>
-      <find>connectorLayer</find>
-      <find>destinations</find>
-      <find>tl_2016_06_tabblock10_centroids</find>
-      <find>gpd</find>
+      <find>ExtendLin</find>
+      <find>The street segment</find>
+      <find>ExtendStreetStreetSegment</find>
+      <find>census_street_geom</find>
+      <find>print</find>
+      <find>Working on Street</find>
+      <find>ConvertMultilinestringtoLinestring</find>
+      <find>connector_geoIDs</find>
+      <find>merged_layer</find>
+      <find>connectorlayersrc</find>
+      <find>printfi</find>
+      <find>processed_count</find>
+      <find>connector_layer</find>
+      <find>full_merged_layer_defn</find>
+      <find>GetFieldCount</find>
+      <find>PrintFeatureFields</find>
     </findStrings>
     <replaceStrings>
       <replace />
       <replace>targetpath</replace>
       <replace>connector_layer</replace>
+      <replace>extended_layer</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -123,15 +124,20 @@
         <option value="$PROJECT_DIR$/queries.py" />
         <option value="$PROJECT_DIR$/intersect_streets_connectors.py" />
         <option value="$PROJECT_DIR$/create_census_centroid_points.py" />
-        <option value="$PROJECT_DIR$/census/census_db.py" />
-        <option value="$PROJECT_DIR$/census/origin_destination_db.py" />
         <option value="$PROJECT_DIR$/create_census_centroid_points_los_angeles.py" />
         <option value="$PROJECT_DIR$/collect_commute_stats_block_level.py" />
-        <option value="$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py" />
         <option value="$PROJECT_DIR$/pip-hstory.py" />
+        <option value="$PROJECT_DIR$/intersect_street_network.py" />
         <option value="$PROJECT_DIR$/identify_rand_home_blocks.py" />
+        <option value="$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/algorithms/shortest_paths/weighted.py" />
+        <option value="$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/readwrite/nx_shp.py" />
+        <option value="$PROJECT_DIR$/census/census_db.py" />
         <option value="$PROJECT_DIR$/calculate_shortest_routes.py" />
+        <option value="$PROJECT_DIR$/census/origin_destination_db.py" />
         <option value="$PROJECT_DIR$/network/streets.py" />
+        <option value="$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py" />
+        <option value="$PROJECT_DIR$/test_intersections.py" />
+        <option value="$PROJECT_DIR$/hive-table" />
         <option value="$PROJECT_DIR$/union_streets_connectors.py" />
       </list>
     </option>
@@ -144,8 +150,8 @@
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="1680" />
-    <option name="y" value="-101" />
-    <option name="width" value="1521" />
+    <option name="y" value="-206" />
+    <option name="width" value="1481" />
     <option name="height" value="961" />
   </component>
   <component name="ProjectView">
@@ -163,7 +169,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -181,11 +186,21 @@
               <item name="roeda" type="462c0819:PsiDirectoryNode" />
               <item name="network" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="roeda" type="b2602c69:ProjectViewProjectNode" />
+              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
+            </path>
+            <path>
+              <item name="roeda" type="b2602c69:ProjectViewProjectNode" />
+              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
+              <item name="&lt; Python 3.5.2 (~/anaconda3/bin/python) &gt;" type="70bed36:NamedLibraryElementNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
       <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -214,7 +229,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.collect_commute_stats_block_level_with_extend">
+  <component name="RunManager" selected="Python.intersect_streets_connectors">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -280,6 +295,24 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method />
     </configuration>
+    <configuration name="calculate_shortest_routes" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="roeda" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/calculate_shortest_routes.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
     <configuration name="collect_commute_stats_block_level_with_extend" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -312,24 +345,6 @@
       <module name="roeda" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/identify_rand_home_blocks.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-    </configuration>
-    <configuration name="insert_block_centroid_intersection" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="roeda" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/insert_block_centroid_intersection.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -371,19 +386,19 @@
       <option name="EMULATE_TERMINAL" value="false" />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.insert_block_centroid_intersection" />
-      <item index="1" class="java.lang.String" itemvalue="Python.intersect_streets_connectors" />
-      <item index="2" class="java.lang.String" itemvalue="Python.loadXWalkRedis" />
-      <item index="3" class="java.lang.String" itemvalue="Python.collect_commute_stats_block_level_with_extend" />
-      <item index="4" class="java.lang.String" itemvalue="Python.identify_rand_home_blocks" />
+      <item index="0" class="java.lang.String" itemvalue="Python.intersect_streets_connectors" />
+      <item index="1" class="java.lang.String" itemvalue="Python.loadXWalkRedis" />
+      <item index="2" class="java.lang.String" itemvalue="Python.collect_commute_stats_block_level_with_extend" />
+      <item index="3" class="java.lang.String" itemvalue="Python.identify_rand_home_blocks" />
+      <item index="4" class="java.lang.String" itemvalue="Python.calculate_shortest_routes" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.collect_commute_stats_block_level_with_extend" />
-        <item index="1" class="java.lang.String" itemvalue="Python.identify_rand_home_blocks" />
-        <item index="2" class="java.lang.String" itemvalue="Python.intersect_streets_connectors" />
-        <item index="3" class="java.lang.String" itemvalue="Python.loadXWalkRedis" />
-        <item index="4" class="java.lang.String" itemvalue="Python.insert_block_centroid_intersection" />
+        <item index="0" class="java.lang.String" itemvalue="Python.intersect_streets_connectors" />
+        <item index="1" class="java.lang.String" itemvalue="Python.calculate_shortest_routes" />
+        <item index="2" class="java.lang.String" itemvalue="Python.collect_commute_stats_block_level_with_extend" />
+        <item index="3" class="java.lang.String" itemvalue="Python.identify_rand_home_blocks" />
+        <item index="4" class="java.lang.String" itemvalue="Python.loadXWalkRedis" />
       </list>
     </recent_temporary>
   </component>
@@ -412,22 +427,22 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1680" y="-101" width="1521" height="961" extended-state="0" />
+    <frame x="1680" y="-206" width="1481" height="961" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Debug Logs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3295838" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.35201794" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3535109" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Execute Anonymous" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21301775" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17893316" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Salesforce" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -435,7 +450,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28229666" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33071747" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -462,75 +477,25 @@
           <line>74</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/network/streets.py</url>
+          <line>314</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="5" />
+      <option name="time" value="7" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="18" lean-forward="false" selection-start-line="3" selection-start-column="18" selection-end-line="3" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="29" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/network/streets.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
           <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding>
             <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#4334#8460#0" expanded="false" />
+            <element signature="e#8834#9490#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -549,127 +514,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="465">
           <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="29" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="29" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1320">
-          <caret line="88" column="3" lean-forward="false" selection-start-line="88" selection-start-column="3" selection-end-line="88" selection-end-column="3" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="29" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="29" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -679,6 +523,8 @@
           <caret line="2" column="0" lean-forward="true" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding>
             <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#4334#8460#0" expanded="false" />
+            <element signature="e#8834#9490#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -788,39 +634,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/census/census_block.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="18" column="0" lean-forward="true" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets_parallel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="0" lean-forward="false" selection-start-line="4" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/census/prep_census.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/census_block_centroids_sp.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="23" column="41" lean-forward="true" selection-start-line="22" selection-start-column="20" selection-end-line="23" selection-end-column="41" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/census/census_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="62" column="25" lean-forward="true" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -838,23 +655,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="39" column="23" lean-forward="false" selection-start-line="39" selection-start-column="6" selection-end-line="39" selection-end-column="23" />
-          <folding>
-            <marker date="1505774304000" expanded="true" signature="215:326" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="487:599" ph="SELECT disti... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="765:814" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="986:1043" ph="SELECT w_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1213:1270" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1622:1765" ph="SELECT h_geo... origindestination" />
-            <marker date="1505774304000" expanded="true" signature="1908:1963" ph="SELECT geoid... block_centroid_intersection" />
-            <marker date="1505774304000" expanded="true" signature="2198:2260" ph="SELECT geoid... block_centroid_intersection_extend" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/insert_block_centroid_intersection.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="315">
@@ -869,13 +669,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pip-hstory.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="86" lean-forward="false" selection-start-line="3" selection-start-column="86" selection-end-line="3" selection-end-column="86" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/pip-hstory.py" />
     <entry file="file://$PROJECT_DIR$/network/densify.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="210">
@@ -890,33 +684,155 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
+    <entry file="file://$PROJECT_DIR$/identify_rand_home_blocks.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="36" column="41" lean-forward="false" selection-start-line="36" selection-start-column="41" selection-end-line="36" selection-end-column="41" />
+        <state relative-caret-position="1560">
+          <caret line="106" column="64" lean-forward="false" selection-start-line="92" selection-start-column="0" selection-end-line="106" selection-end-column="64" />
           <folding>
-            <element signature="e#0#21#0" expanded="true" />
+            <marker date="1506355865000" expanded="true" signature="7420:7454" ph="SELECT * FRO... missing_value" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/identify_rand_home_blocks.py">
+    <entry file="file://$PROJECT_DIR$/intersect_street_network.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/algorithms/shortest_paths/generic.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="707">
-          <caret line="217" column="50" lean-forward="false" selection-start-line="217" selection-start-column="50" selection-end-line="217" selection-end-column="50" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-            <marker date="1506103239000" expanded="true" signature="7467:7497" ph="SELECT * FRO... missing_value" />
-            <marker date="1506103239000" expanded="true" signature="7467:7501" ph="SELECT * FRO... missing_value" />
-            <marker date="1506103239000" expanded="true" signature="7467:7503" ph="SELECT * FRO... " />
-          </folding>
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/algorithms/dag.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-940">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/algorithms/shortest_paths/weighted.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5535">
+          <caret line="373" column="57" lean-forward="false" selection-start-line="373" selection-start-column="57" selection-end-line="373" selection-end-column="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/classes/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/classes/graph.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-15607">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/classes/digraph.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="11625">
+          <caret line="775" column="13" lean-forward="false" selection-start-line="775" selection-start-column="4" selection-end-line="775" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/external/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.5/site-packages/networkx/readwrite/nx_shp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1590">
+          <caret line="106" column="0" lean-forward="false" selection-start-line="106" selection-start-column="0" selection-end-line="130" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/census/census_block_centroids_sp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" column="41" lean-forward="true" selection-start-line="22" selection-start-column="20" selection-end-line="23" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/census/census_block.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="18" column="0" lean-forward="false" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/census/census_db.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="480">
+          <caret line="32" column="0" lean-forward="false" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/si.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="6" column="63" lean-forward="false" selection-start-line="6" selection-start-column="63" selection-end-line="6" selection-end-column="63" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/weighted_edge_list_simple.txt" />
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2017.2/python_stubs/477848841/builtins.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="475" column="4" lean-forward="false" selection-start-line="475" selection-start-column="4" selection-end-line="475" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/census/origin_destination_db.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="960">
+          <caret line="65" column="4" lean-forward="false" selection-start-line="65" selection-start-column="4" selection-end-line="65" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/calculate_shortest_routes.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="22" column="17" lean-forward="false" selection-start-line="22" selection-start-column="17" selection-end-line="22" selection-end-column="17" />
+        <state relative-caret-position="1725">
+          <caret line="119" column="41" lean-forward="false" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/network/streets_parallel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="283">
+          <caret line="159" column="40" lean-forward="false" selection-start-line="159" selection-start-column="6" selection-end-line="159" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/network/streets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1452">
+          <caret line="401" column="47" lean-forward="false" selection-start-line="401" selection-start-column="34" selection-end-line="401" selection-end-column="47" />
+          <folding>
+            <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#4334#8460#0" expanded="false" />
+            <element signature="e#8834#9490#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hive-table" />
+    <entry file="file://$PROJECT_DIR$/test_intersections.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-927">
+          <caret line="3" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/collect_commute_stats_block_level_with_extend.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="53" column="2" lean-forward="false" selection-start-line="53" selection-start-column="2" selection-end-line="53" selection-end-column="21" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
           </folding>
@@ -925,20 +841,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/union_streets_connectors.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="69">
-          <caret line="61" column="30" lean-forward="true" selection-start-line="61" selection-start-column="30" selection-end-line="61" selection-end-column="30" />
+        <state relative-caret-position="316">
+          <caret line="379" column="4" lean-forward="false" selection-start-line="379" selection-start-column="6" selection-end-line="381" selection-end-column="98" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/network/streets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="20" column="117" lean-forward="false" selection-start-line="20" selection-start-column="117" selection-end-line="20" selection-end-column="117" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#745#2132#0" expanded="false" />
+            <element signature="e#10713#12144#0" expanded="false" />
+            <element signature="e#24208#26562#0" expanded="false" />
+            <element signature="e#26589#27359#0" expanded="false" />
+            <marker date="1509561600000" expanded="true" signature="14651:15305" ph="..." />
+            <marker date="1509561600000" expanded="true" signature="14651:15384" ph="..." />
           </folding>
         </state>
       </provider>
