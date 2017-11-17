@@ -87,19 +87,6 @@ def SetCensusRoadProperties (source_feature, new_feature):
     new_feature.SetField("RTTYP", source_feature.GetField("RTTYP"))
 
 
-def CopyFeature (source_feature, target_layer, target_layerDefn, origin = -1):
-
-    new_feature = ogr.Feature(target_layerDefn)
-    if (source_feature.GetDefnRef().GetFieldIndex("LINEARID") != -1) :
-        SetCensusRoadProperties(source_feature, new_feature)
-    else:
-        new_feature.SetField("GeoID", source_feature.GetField("GeoID"))
-
-    new_feature.SetGeometry(source_feature.GetGeometryRef())
-    # PrintFeatureFields(target_layer, new_feature)
-    target_layer.CreateFeature(new_feature)
-    new_feature = None
-
 def IsDangle (line_geometry, dangle_length):
     return line_geometry.Length() <= dangle_length
 
@@ -184,6 +171,19 @@ def ExtendStreetStreetSegment(street_segment_geom, connector_segment_geom):
         return street_segment_geom
 
     return None
+
+def CopyFeature (source_feature, target_layer, target_layerDefn, origin = -1):
+
+    new_feature = ogr.Feature(target_layerDefn)
+    if (source_feature.GetDefnRef().GetFieldIndex("LINEARID") != -1) :
+        SetCensusRoadProperties(source_feature, new_feature)
+    else:
+        new_feature.SetField("GeoID", source_feature.GetField("GeoID"))
+
+    new_feature.SetGeometry(source_feature.GetGeometryRef())
+    # PrintFeatureFields(target_layer, new_feature)
+    target_layer.CreateFeature(new_feature)
+    new_feature = None
 
 def CreateFeatures(census_street_feature, merged_layer, merged_layer_defn,
                    geo_id, census_street_geom):
@@ -312,10 +312,30 @@ def PrintFields(layer):
 
     print ("Name: {} is of Type {}, Width {} and Precision {}".format(fieldName, fieldType, str(fieldWidth), str(GetPrecision)))
 
-def GetLinearIDExclusionList(linear_id_list):
+# Create a query using an IN statement to query for the list
+# of LINEARID values.
+def GetLinearIDInclusionList(linear_id_list):
 
     exclusion_list = ''.join('\'' + str(id) +'\',' for id in linear_id_list)
-    return 'LINEARID NOT IN (' + exclusion_list[:-1] + ')'
+    return 'LINEARID IN (' + exclusion_list[:-1] + ')'
+
+# Create a Python list of LINEARID values from the Los Angeles Clipped roads
+# that are not in the supplied linear_id_list list
+def GetInvertedIDList(linear_id_list):
+
+    inverted_id_list = []
+    # This is for all of LA
+    # censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
+    # This just for RAND
+    censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_rand_clipped.shp"
+    census_street_network = ogr.Open(censusstreetlayersrc)
+    census_street_layer = census_street_network.GetLayer(0)
+    for census_street_feature in census_street_layer:
+        linear_id = census_street_feature.GetField("LINEARID")
+        if (linear_id not in linear_id_list):
+            inverted_id_list.append(linear_id)
+
+    return inverted_id_list
 
 # Merge the LA County street lines with the block centroid connector lines
 # to create a single dataset of all street segments and connector approximations
@@ -324,8 +344,14 @@ def UnionBlockCentroidStreetLines(execute_level):
 
   ogr.UseExceptions()
 
-  censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-  connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors_extend.csv"
+  # This is for all of LA
+  # censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
+  # This just for RAND
+  censusstreetlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_rand_clipped.shp"
+  # This is for all of LA
+  # connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors_extend.csv"
+  # This just for RAND
+  connectorlayersrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors_rand.csv"
 
   if (execute_level == '1' or execute_level == '3'):
     print("Creating connectors from CSV")
@@ -379,7 +405,8 @@ def UnionBlockCentroidStreetLines(execute_level):
     # rather expensive query to execute, but should work
     # connector_layer.SetAttributeFilter("GeoID='060375541051003' OR GeoID='060375531003008' OR GeoID='060375541051004' "
     #                                    "OR GeoID='060375541051002' OR GeoID='060375545213009' OR GeoID='060375545213009'"
-    #                                    "OR GeoID='060375531004010' OR GeoID='060375542031006'" )
+    #                                    "OR GeoID='060379001021519' OR GeoID='060379001021506' OR GeoID='060379002011297'"
+    #                                    "OR GeoID='060375531004010' OR GeoID='060375542031006' OR GeoID='060379002011304'" )
     # connector_layer.SetAttributeFilter("GeoID='060375541051003' OR GeoID='060375541051002' OR GeoID='060375545213009' OR GeoID='060375545213009'")
     linearidlist = []
     for connector_feature in connector_layer:
@@ -431,20 +458,42 @@ def UnionBlockCentroidStreetLines(execute_level):
         if (total_count % 1000 == 0):
             print("We have processed {} segments".format(str(total_count)))
 
-    # Now we add the missign street segments (those that did not intersect with any connectors)
-    attribute_filter = GetLinearIDExclusionList(linearidlist)
     census_street_layer.SetSpatialFilter(None)
-    print("Exclusion filter = {}".format(attribute_filter))
-    census_street_layer = census_street_network.GetLayer(0)
-    if (census_street_layer.GetFeatureCount() > 0):
-        print("A = feature count {}".format(census_street_layer.GetFeatureCount()))
-    census_street_layer.SetAttributeFilter(attribute_filter)
-    if (census_street_layer.GetFeatureCount() > 0):
-        print("B = feature count {}".format(census_street_layer.GetFeatureCount()))
-    # census_street_layer.ResetReading()
-    for census_street_feature in census_street_layer:
-        CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
 
+    # Now we add the missing street segments (those that did not intersect with any connectors)
+    # We have to do this in small increments as the full list will break - got a memory
+    # exception from OSGEO when i tried an attribute filter with more than 10000 entries
+    # First we invert the list of LINEARIDs from those we've finished to all
+    # the IDs in the street layer
+    if (1 == 2):
+        print ("Calculating inverted ID List")
+        inverted_linearidlist = GetInvertedIDList(linearidlist)
+        total_set_count = 0
+        # then we'll run batches of queries from this list of the street layer to add back to the merged layer
+        continue_processing = True
+        print ("Processing batches of the street segments")
+        while (continue_processing):
+            total_set_count += 1
+            inverted_linearid_sublist = []
+            for x in range(100):
+                if (len(inverted_linearidlist) > 0):
+                    inverted_linearid_sublist.append(inverted_linearidlist.pop())
+                else:
+                    continue_processing = False
+                    break
+
+            attribute_filter = GetLinearIDInclusionList(inverted_linearid_sublist)
+
+            print("Inclusion filter = {}".format(attribute_filter))
+            census_street_layer.SetAttributeFilter(attribute_filter)
+            if (census_street_layer.GetFeatureCount() > 0):
+                print("We have more than 0 features {}".format(census_street_layer.GetFeatureCount()))
+                for census_street_feature in census_street_layer:
+                    CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
+
+            if (total_set_count % 10 == 0):
+                print("We have processed {} remaining street segments".format(str(total_set_count)))
+                break
 
     # LINEARID 1103747746552 does seem to fit in the buffer, but doesn't intersect with anything
     # First sweep we identify the connectors that don't intersect a street segment and we'll rewrite
