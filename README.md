@@ -38,19 +38,19 @@ Proof of concept operating in Los Angeles County to ask a few questions:
 2. Would there be any real cost savings to routing by elevation gain 
 rather than just shortest distance.
 3. Future idea - bring in traffic data and do some time-of-work optimizations
-for various people
+for various people combinations.
 
 # Pieces of the Puzzle
 
 ## Spatial Data:
-DTED Data from https://earthexplorer.usgs.gov/ using Digital Elevation -> SRTM 1 Arc-Second Global data which are set at 30 meter
-Road network:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php - All roads - ran getstreets.py to pull down all counties in California 
-Census blocks:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2016&layergroup=Blocks+%282010%29
+* DTED Data from https://earthexplorer.usgs.gov/ using Digital Elevation -> SRTM 1 Arc-Second Global data which are set at 30 meter
+* Road network:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php - All roads - ran getstreets.py to pull down all counties in California 
+* Census blocks:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2016&layergroup=Blocks+%282010%29
 
 ## General System Prep:
-Install projections /usr/local/gis/proj4 from egis
-Install qgis (pip install qgis)
-Install shapely (pip install shapely==1.6b4)
+* Install projections /usr/local/gis/proj4 from egis
+* Install qgis (pip install qgis)
+* Install shapely (pip install shapely==1.6b4)
 
 https://gis.stackexchange.com/questions/82935/ogr-layer-intersection
 
@@ -59,8 +59,8 @@ https://gis.stackexchange.com/questions/82935/ogr-layer-intersection
 ## Q1:  Commute miles per categories - age, pay, job classification
 
 Assumptions:
-People commute every day
-People commute by shortest route
+* People commute every day
+* People commute by shortest route
 
 Approach: 
 
