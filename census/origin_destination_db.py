@@ -60,3 +60,7 @@ class OriginDestinationDB(CensusDB):
       geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
     return geoidDict
 
+  def SetBlockCommute (self, homegeoid, workgeoid, route_length):
+    setSQL = "UPDATE origindestination SET o_d_commute = ? WHERE h_geocode = ? and w_geocode = ?"
+    # print ("about to execute SQL {} with homegeoid {} and workgeoid {} and length of {}".format(setSQL, homegeoid, workgeoid, route_length))
+    self.exec(setSQL, (route_length, homegeoid, workgeoid))

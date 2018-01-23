@@ -1,11 +1,13 @@
 from osgeo import ogr, osr
-
 import networkx as nx
-import numpy as np
+import geopandas as gp
+import pandas as pd
 import time, os
-from shapely.geometry import Point
+import fiona
+from shapely.geometry import Point, shape
 from math import sqrt
 from sys import maxsize
+import shutil
 from itertools import tee
 
 # https://pymotw.com/2/threading/
@@ -15,32 +17,25 @@ class Streets():
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
 
   def __init__(self):
-    print ("INITING")
-    start = time.time()
+    print ("INITING STREET NETWORK")
+
     self.SRID = 32711   # UTM zone 11S, WGS 84
+    self.road_origin = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
     self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/la_streets_with_block_centroid_connectors.shp"
     self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
 
     self.roadnetwork = ogr.Open(self.roadsrc)
     self.roadlayer  = self.roadnetwork.GetLayer(0)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
+    self.roadnetwork_origin = ogr.Open(self.road_origin)
+    self.roadlayer_origin  = self.roadnetwork_origin.GetLayer(0)
     self.blocknetwork = ogr.Open(self.blocksrc)
     self.blocklayer  = self.blocknetwork.GetLayer(0)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
 
-    self.sourceSpatialRef = self.roadlayer.GetSpatialRef();
+    self.sourceSpatialRef = self.roadlayer.GetSpatialRef()
     self.targetSpatialRef = osr.SpatialReference()
     self.targetSpatialRef.ImportFromEPSG(self.SRID)
 
     self.transform = osr.CoordinateTransformation(self.sourceSpatialRef, self.targetSpatialRef)
-    end = time.time()
-    print ("Elapsed in Streets: {}".format(end-start))
-
-#    self.roadDiGraph = nx.read_shp(self.roadsrc)
-#    end = time.time()
-#    print ("Elapsed in Streets: {}".format(end-start))
 
     print ("DONE INITING")
 
@@ -52,7 +47,7 @@ class Streets():
   # From https://www.daftlogic.com/projects-google-maps-distance-calculator.htm
   def GetProjectedLength(self, geometry):
     geometry.Transform(self.transform)
-    return geometry.Length() 
+    return geometry.Length()
 
   # Reference:  http://www.gdal.org/classOGRGeometryCollection.html
   def GetLengthAllRoads(self):
@@ -60,7 +55,7 @@ class Streets():
     for j in range(self.GetCountAllRoadSegments()):
        roadsegment = self.roadlayer.GetFeature(j)
        roadsegmentgeom = roadsegment.GetGeometryRef()
-       roadlen = self.GetProjectedLength(roadsegmentgeom)       
+       roadlen = self.GetProjectedLength(roadsegmentgeom)
        len = len + roadsegmentgeom.Length()
     return len
 
@@ -74,23 +69,246 @@ class Streets():
        len = len + roadlen
     return len
 
-  # Given a starting point and ending point, find the 
-  # shortest route using this street network.  Does not 
-  # assume that the points are on the network but that
-  # they are in the vicinity of the network (within 100 meters)
-  def GetShortestRoute(self, srcPoint, dstPoint):
-    nearest_point_on_street, nearest_street = self.GetNearestStreet(1, srcPoint)
-    i = 0
-    for n in self.roadDiGraph.edges():
-       # print ("graph entry {} of type {}".format(n, type(n)))
-       if i >= 10:
-         break
-       i = i + 1
+  def CalcWeightFromMTFCC(self, MTFCC, EdgeLength):
 
-    # shortestRoute = nx.dijkstra_path(self.roadDiGraph, (srcPoint.GetX(), srcPoint.GetY()), (dstPoint.getX(), dstPoint.GetY())) 
-    # return shortestRoute
+    if (MTFCC == "S1100"):
+      return 1.0 * EdgeLength
+    elif(MTFCC == "S1200"):
+      return 1.2 * EdgeLength
+    elif (MTFCC == "S1400"):
+      return 1.6 * EdgeLength
+    else:
+      return 1.5 * EdgeLength
 
-  # Following 2 methods from http://gis.stackexchange.com/a/438/94363
+  def InitNetworkGraphSimple(self):
+
+      start = time.time()
+
+      self.roadGraph = nx.read_shp(self.roadsrc, False)
+      self.StreetNodeFromDict = {}
+      self.StreetNodeToDict = {}
+
+      print("Graph has been successfully generated{}".format(nx.info(self.roadGraph)))
+      print("Show graph data structure EDGE".format(self.roadGraph.get_edge_data(*list(self.roadGraph.edges())[0])))
+      print("Show graph data structure NODE".format(list(self.roadGraph.nodes())[0]))
+      for edge in self.roadGraph.edges(data=True):
+        self.StreetNodeFromDict[edge[0]] = (edge[0], edge[1])
+        self.StreetNodeToDict[edge[1]] = (edge[0], edge[1])
+
+      # Now we replicate and make undirected
+      self.roadGraph = self.roadGraph.to_undirected(reciprocal=False)
+
+#      for edge in self.roadGraph.edges(data=True):
+
+      end = time.time()
+      print("Network:  ")
+      print("Elapsed in Streets InitNetwork: {}".format(end - start))
+
+  # Posts read on this topic:
+  # https://gis.stackexchange.com/questions/213369/how-to-calculate-edge-length-in-networkx
+  # https://gis.stackexchange.com/questions/211053/inaccurate-output-missing-features-while-reading-a-shapefile-into-networkx/211103#211103
+  # Cribbed Shape to DiGraph conversion here:  https://stackoverflow.com/questions/46114754/osmnx-and-networkx-shortest-path-length-and-edge-attributes
+  def InitNetworkGraph(self):
+
+    start = time.time()
+
+    self.StreetDataFrame = gp.read_file(self.roadsrc)
+
+    # Compute the start- and end-position based on linestring
+    self.StreetDataFrame['Start_pos'] = self.StreetDataFrame.geometry.apply(lambda x: x.coords[0])
+    self.StreetDataFrame['End_pos'] = self.StreetDataFrame.geometry.apply(lambda x: x.coords[-1])
+    print ("\n\nSet Start and End Pos Series")
+    print(self.StreetDataFrame.head())
+
+    self.StreetDataFrame['length'] = self.StreetDataFrame.geometry.apply(lambda x: x.length)
+    self.StreetDataFrame['weight'] = self.StreetDataFrame.apply(lambda x: self.CalcWeightFromMTFCC(x['MTFCC'], x['length']), axis=1)
+
+    print ("\n\nSet Length and Weight")
+    print(self.StreetDataFrame.head())
+
+    # Create Series of unique nodes and their associated position
+    s_points = self.StreetDataFrame.Start_pos.append(self.StreetDataFrame.End_pos).reset_index(drop=True)
+    s_points = s_points.drop_duplicates()
+
+    print ("\n\ns_points is of type {}".format(type(s_points)))
+
+    # Add index of start and end node of linestring to geopandas DataFrame
+    df_points = pd.DataFrame(s_points, columns=['Start_pos'])
+    df_points['FNODE_'] = df_points.index
+    self.StreetDataFrame = pd.merge(self.StreetDataFrame, df_points, on='Start_pos', how='inner')
+
+    df_points = pd.DataFrame(s_points, columns=['End_pos'])
+    df_points['TNODE_'] = df_points.index
+    self.StreetDataFrame = pd.merge(self.StreetDataFrame, df_points, on='End_pos', how='inner')
+
+    # Bring nodes and their position in form needed for osmnx (give arbitrary osmid (index) despite not osm file)
+    df_points.columns = ['pos', 'osmid']
+    df_points[['x', 'y']] = df_points['pos'].apply(pd.Series)
+    df_node_xy = df_points.drop('pos', 1)
+
+    self.roadGraph = nx.MultiDiGraph(name="LA_Roads")
+
+    node_index = 0
+    for node, data in df_node_xy.T.to_dict().items():
+        self.roadGraph.add_node(node, **data)
+        node_index += 1
+        if (node_index % 10000 == 0):
+          print(node)
+          print(', '.join(['{}={!r}'.format(k, v) for k, v in data.items()]))
+
+    # Add edges to graph
+    node_index = 0
+    for i, row  in self.StreetDataFrame.iterrows():
+        dict_row  = row.to_dict()
+        if 'geometry' in dict_row: del dict_row['geometry']
+        self.roadGraph.add_edge(u=dict_row['FNODE_'], v=dict_row['TNODE_'], **dict_row)
+        node_index += 1
+        if (node_index % 10000 == 0):
+          print(dict_row['FNODE_'])
+          print(', '.join(['{}={!r}'.format(k, v) for k, v in dict_row.items()]))
+
+    # Now reverse the F and T nodes and add all new edges so we have a bi-directional
+    # graph.  Without this, the network traversal will only try to from FNODES to TNODES
+    # which is like assuming all streets in the network are one-way in the direction
+    # they were digitized.  This may be the case in some LA Streets, we just don't
+    # have that data, so assuming all two-way streets for now.
+    self.StreetDataFrame.rename(columns={'Start_pos': 'End_pos',
+           'End_pos': 'Start_pos',
+           'FNODE_': 'TNODE_',
+           'TNODE_': 'FNODE_', }, inplace=True)
+
+    # Add edges to graph
+    for i, row  in self.StreetDataFrame.iterrows():
+        dict_row  = row.to_dict()
+        if 'geometry' in dict_row: del dict_row['geometry']
+        self.roadGraph.add_edge(u=dict_row['FNODE_'], v=dict_row['TNODE_'], **dict_row)
+
+    # self.StreetDataFrame.to_csv("/Users/cthomas/Development/roeda/dataframe.csv")
+    # nx.write_shp(self.roadGraph, "/Users/cthomas/Development/roeda/")
+    print("Graph has been successfully generated{}".format(nx.info(self.roadGraph)))
+    print("Show graph data structure EDGE".format(self.roadGraph.get_edge_data(*list(self.roadGraph.edges())[0])))
+    print("Show graph data structure NODE".format(list(self.roadGraph.nodes())[0]))
+    with open("/Users/cthomas/Development/roeda/weighted_edge_list.txt", "w") as writeit:
+      for edge in self.roadGraph.edges(data=True):
+        writeit.write("{}\n".format(edge))
+
+    end = time.time()
+    print ("Network:  ")
+    print ("Elapsed in Streets InitNetwork: {}".format(end-start))
+
+  def GetStreetIDFromNodeSimple(self, geometry_point, FromOrTo = 'FNODE_'):
+
+    if (FromOrTo == "FNODE_"):
+      if geometry_point in self.StreetNodeFromDict:
+        return self.StreetNodeFromDict[geometry_point]
+      else:
+        return -1
+    else:
+      return self.StreetNodeToDict[geometry_point]
+
+  def GetNodeID(self, geometry_point, FromOrTo = 'FNODE_'):
+
+    if (FromOrTo == "FNODE_"):
+      frame_position = "Start_pos"
+    else:
+      frame_position = "End_pos"
+
+    print("      Looking for frame pos {} with a geometry of {}".format(frame_position, geometry_point))
+
+    find_record = self.StreetDataFrame.loc[self.StreetDataFrame[frame_position] == geometry_point]
+    print ("      GET NODE Record of type {} has FNODE type {} and values {}".format(type(find_record), type(find_record[FromOrTo]),
+                                                                                     find_record[FromOrTo].values))
+    if (find_record.empty):
+      return -1
+    else:
+      return find_record[FromOrTo].iloc[0]
+
+  def CalculateShortestRoute(self, srcPoint, dstStreetSegmentID):
+    """
+    Given a starting point and ending point, find the
+    shortest route using this street network.  Does not
+    assume that the points are on the network but that
+    they are in the vicinity of the network (within 100 meters)
+
+    Parameters
+    ----------
+    srcPoint : osgeo.ogr.Geometry
+      The origin of the route as an osgeo Point Geometry
+    dstPointID : The network ID of the destination point
+      The destination of the route.  This is passed rather than
+      determined each time as it is expected the calling
+      method is looping over mulitple origins for each
+      destination.
+
+    Returns
+    -------
+    The ID of the route which is the path to the shapefile generated.
+    """
+    srcSegmentID = self.GetStreetIDFromNodeSimple(srcPoint, "FNODE_")
+
+    # print ("    The home {} work {} IDs have been identified".format(srcSegmentID, dstStreetSegmentID))
+    if (srcSegmentID != -1 and dstStreetSegmentID != -1):
+
+      start = time.time()
+      try:
+        shortestRoute = self.roadGraph.subgraph(nx.shortest_path(self.roadGraph, srcSegmentID[0], dstStreetSegmentID[0], weight='weight'))
+        end = time.time()
+        # print ("Elapsed in Streets GetShortestRoute: {}".format(end-start))
+        nx.write_shp(shortestRoute, str(srcSegmentID[0]) + "-" + str(dstStreetSegmentID[0]))
+        return str(srcSegmentID[0]) + "-" + str(dstStreetSegmentID[0])
+      except nx.NetworkXNoPath:
+        print ("---- We could not find a path from {}".format(srcPoint))
+        return None
+    else:
+      print ("**** We could not find the street connector for {}".format(srcPoint))
+      return None
+
+  def MergeShortestRoute(self, route_id):
+
+    """
+    Merges the calculated route with the shortest route returning
+    the length in the current coordinate system (degrees). It merges
+    the two shape files and then removes the original.  The first
+    call to this method sets up the shortest route by copying
+    the first calculated route.  All fields should be identical.
+
+    Parameters
+    ----------
+    route_id : string
+      The from-to coordinate pair of the route which defines
+      the path to the route shapefile
+
+    Returns
+    -------
+    The length of the route that was merged.
+    """
+    routes_path = "shortest_routes"
+
+    path_length = 0
+
+    if not os.path.exists(routes_path + "/edges.shp"):
+      if os.path.exists(routes_path):
+        os.rmdir(routes_path)
+      shutil.copytree(route_id, routes_path)
+    else:
+      meta = fiona.open(routes_path + '/edges.shp').meta
+      with fiona.open(routes_path + '/edges.shp', 'a', **meta) as output:
+        for feature in fiona.open(route_id + '/edges.shp'):
+          # length is in degrees; a degree in LA ranges from ~9,400 meters to
+          # the north and 9,200 meters to the south
+          path_length += shape(feature['geometry']).length
+          output.write(feature)
+
+      meta = fiona.open(routes_path + '/nodes.shp').meta
+      with fiona.open(routes_path + '/nodes.shp', 'a', **meta) as output:
+        for feature in fiona.open(route_id + '/nodes.shp'):
+          output.write(feature)
+
+      shutil.rmtree(route_id)
+
+      return path_length
+
+# Following 2 methods from http://gis.stackexchange.com/a/438/94363
   # these methods rewritten from the C version of Paul Bourke's
   # geometry computations:
   # http://local.wasp.uwa.edu.au/~pbourke/geometry/pointline/
@@ -122,7 +340,7 @@ class Streets():
     if logLevel >= 2:
        print ("        We have u of {} and line_magnitude of {}".format(u, line_magnitude))
 
-    # closest point does not fall within the line segment, 
+    # closest point does not fall within the line segment,
     # take the shorter distance to an endpoint
     if u < 0.0000001 or u > 1:
       ix = self.magnitude(point, line_start)
@@ -244,8 +462,8 @@ class Streets():
     nearest_street = None
     nearestSegment = None
 
-    self.roadlayer.ResetReading()
-    for roadsegment in self.roadlayer:
+    self.roadlayer_origin.ResetReading()
+    for roadsegment in self.roadlayer_origin:
        roadGeometry = roadsegment.GetGeometryRef()
 
        if logLevel >= 1:
@@ -256,7 +474,7 @@ class Streets():
        else:
          print ("We have a multilinestring {}".format(roadGeometry.GetGeometryName()))
          roadPointsIter = iter(self.ConvertMultilinestringtoLinestring(roadGeometry).GetPoints())
-          
+
        for lineSegment in self.GetPairwise(roadPointsIter):
 
          startPoint = ogr.Geometry(ogr.wkbPoint)
@@ -288,8 +506,10 @@ class Streets():
       print ("    Nearest point for {} found at {} from lineSegment {} with a min_dist {}".format(pntSource, nearest_point, nearestSegment, min_dist))
     return nearest_point, nearest_street
 
-  def ExtendLine (self, startPoint, endPoint, length):
+  def ExtendLine (self, log_level, startPoint, endPoint, length):
     lenAB = sqrt(pow(startPoint.GetX() - endPoint.GetX(), 2.0) + pow(startPoint.GetY() - endPoint.GetY(), 2.0))
+    if (log_level >= 1):
+      print("We have a lenAB of {}".format(lenAB))
     newPoint = ogr.Geometry(ogr.wkbPoint)
     newPoint.AddPoint( endPoint.GetX() + (endPoint.GetX() - startPoint.GetX()) / lenAB * length,
                        endPoint.GetY() + (endPoint.GetY() - startPoint.GetY()) / lenAB * length)
@@ -298,16 +518,16 @@ class Streets():
 
   # Given a source point feature, find the streets that are closest
   # to that point, starting a 100 meters, moving out until a set
-  # can be found.  
+  # can be found.
   # Create a buffer using Shapely, then convert to an osgeo Polygon,
   # then perform a spatial filter to return a set of nearby streets.
   def FilterNearbyStreets (self, logLevel, pntSource):
 
     if logLevel == 1:
       print ("Point source X and Y: {}, {}".format(str(pntSource.GetX()), str(pntSource.GetY())))
-    
+
     shpPoint = Point(pntSource.GetX(), pntSource.GetY())
-    
+
     enoughSegments = False
     bufferSize = 0.001
 
@@ -328,12 +548,12 @@ class Streets():
       ogrPoly = ogr.Geometry(ogr.wkbPolygon)
       ogrPoly.AddGeometry(ring)
       print ("About to set spatial filter")
-      self.roadlayer.SetSpatialFilter(ogrPoly)
+      self.roadlayer_origin.SetSpatialFilter(ogrPoly)
       print ("Set spatial filter!")
 
-      enoughSegments = (self.roadlayer.GetFeatureCount() > 1)
+      enoughSegments = (self.roadlayer_origin.GetFeatureCount() > 1)
       bufferSize = bufferSize + 0.0005
 
       if logLevel == 1:
-        for feature in self.roadlayer:
+        for feature in self.roadlayer_origin:
           print("    Feature street name: {}".format(feature.GetField("FULLNAME")))

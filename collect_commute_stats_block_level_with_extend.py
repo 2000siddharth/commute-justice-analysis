@@ -58,7 +58,7 @@ def PreProcessBlockCentroidStreetLines():
   dctDistances = {}
 
   n = 0
-  logLevel = 1
+  logLevel = 0
 
   # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
   # I took a stabe at this with parallel_collect_commute_stats_block_level but ran into
@@ -76,12 +76,17 @@ def PreProcessBlockCentroidStreetLines():
       print("Processing Home GEO {}".format(homegeoid))
       streets.FilterNearbyStreets(logLevel, homeGeometry)
       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
-      nearest_point_on_street = streets.ExtendLine(homeGeometry, nearest_point_on_street, 0.0000005)
       if nearest_point_on_street != None:
-        dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')'
-        pointlogfile.write('POINT (' + str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
-        streetlogfile.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' + 
-             str(nearest_point_on_street.GetX()) + ' ' + str(nearest_point_on_street.GetY()) + ')\t\'' + homegeoid + '\'\n')
+        nearest_point_on_street_extended = streets.ExtendLine(logLevel, homeGeometry, nearest_point_on_street, 0.0000005)
+        if nearest_point_on_street_extended != None:
+          dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')'
+          pointlogfile.write('POINT (' + str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')\t\'' + homegeoid + '\'\n')
+          streetlogfile.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' +
+               str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')\t\'' + homegeoid + '\'\n')
+        else:
+          print("---- We could properly extend the nearest street connector {}".format(homegeoid))
+      else:
+        print("---- We could not find a nearest street for Block {}".format(homegeoid))
     else:
       print("Already processed {}".format(homegeoid))
 
