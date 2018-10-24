@@ -1,11 +1,9 @@
 from osgeo import ogr, osr
 import sys
 from census.origin_destination_db import OriginDestinationDB
+import configparser, os
 
 ogr.UseExceptions()
-
-censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_los_angeles_blocks.shp"
-targetpath = "/Users/cthomas/Development/Data/spatial/Census/singlesource_2016_06_tabblock10.shp"
 
 # 060377019023015
 # Useful notes: https://trac.osgeo.org/gdal/wiki/PythonGotchas
@@ -16,7 +14,7 @@ targetpath = "/Users/cthomas/Development/Data/spatial/Census/singlesource_2016_0
 # Create a new empty shape layer with a name
 # and a type of shape (such as ogr.wkbLineString).
 # Defaults to the EPSG 4326, very common coordinates
-def CreateNewShapeLayer(shapeName, shapeType):
+def CreateNewShapeLayer(shapeName, shapeType, targetpath):
 
     driver = ogr.GetDriverByName("ESRI Shapefile")
     data_source = driver.CreateDataSource(targetpath)
@@ -70,7 +68,7 @@ def CopyFeature (source_feature, target_layer, target_layerDefn, origin = -1):
 
 # Use SetAttributeFilter for each h_geoid and make a copy
 # of the features.
-def ProcessOriginDestinationBlocks(w_geoid):
+def ProcessOriginDestinationBlocks(w_geoid, censussrc, targetpath):
 
     odb = OriginDestinationDB()
 
@@ -149,7 +147,7 @@ def CreateGeoIDQueryClause (origins):
     return clause
 
 # Did not finish implementation of this...
-def ProcessOriginDestinationBlocksWithQuery (w_geoid):
+def ProcessOriginDestinationBlocksWithQuery (w_geoid, censussrc, targetpath):
     odb = OriginDestinationDB()
 
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -213,8 +211,11 @@ def main(argv):
            "  3: run both 1 and 2")
 
   else:
-
-      ProcessOriginDestinationBlocks (sys.argv[1])
+      config = configparser.ConfigParser()
+      config.read(os.getcwd() + '/params.ini')
+      censussrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['RAND_LA_Tabblock'] + '.shp'
+      targetpath = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['RAND_Singlesource_Tabblock'] + '.shp'
+      ProcessOriginDestinationBlocks (sys.argv[1], censussrc, targetpath)
 
 if __name__ == "__main__":
   main(sys.argv[1:])

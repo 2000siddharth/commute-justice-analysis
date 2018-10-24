@@ -3,6 +3,7 @@ import networkx as nx
 import geopandas as gp
 import pandas as pd
 import time, os
+import configparser
 import fiona
 from shapely.geometry import Point, shape
 from math import sqrt
@@ -17,12 +18,15 @@ class Streets():
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
 
   def __init__(self):
-    print ("INITING STREET NETWORK")
+    print ("INITING STREET NETWORK {}".format(os.getcwd()))
+
+    config = configparser.ConfigParser()
+    config.read(os.getcwd() + '/params.ini')
 
     self.SRID = 32711   # UTM zone 11S, WGS 84
-    self.road_origin = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-    self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/la_streets_with_block_centroid_connectors.shp"
-    self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+    self.road_origin = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines'] + '.shp'
+    self.roadsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines_Block_Connectors'] + '.shp'
+    self.blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
 
     self.roadnetwork = ogr.Open(self.roadsrc)
     self.roadlayer  = self.roadnetwork.GetLayer(0)

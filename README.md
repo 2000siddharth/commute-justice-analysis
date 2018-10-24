@@ -6,10 +6,10 @@ interested in understanding whether those having lower household incomes had to
 commute more and if so, how much.  Given Census data, there are many other questions
 you could answer.
 
-On can easily do this with a few commands in ArcGIS but that costs money and requires
+One can easily do this with a few commands in ArcGIS but that costs money and requires
 human intervention.  One could also script this, but you still have the ArcGIS license.
 I then discovered QGIS, a great alternative to ArcGIS; that team have done an 
-exception job.  QGIS also offers scripting, but you still need to install the 
+exceptional job.  QGIS also offers scripting, but you still need to install the 
 QGIS GUI / desktop application as far as I understand.  I wanted to be able to run this
 in a headless completely automated way so that it could be run in the background of any free
 server; as it turns out it takes many hours just to process Los Angeles, so to 
@@ -42,15 +42,31 @@ for various people combinations.
 
 # Pieces of the Puzzle
 
+## Census and Related Data:
+
+* LEHD Origin-Destination Employment Statistics (LODES) - 
+https://lehd.ces.census.gov/data/ downloaded from 
+https://lehd.ces.census.gov/data/lodes/LODES7/ca/od/ca_od_main_JT00_2015.csv.gz
+* LEHD CA Crosswalk with Census Block Metadata - 
+https://lehd.ces.census.gov/data/lodes/LODES7/ca/ca_xwalk.csv.gz
+
 ## Spatial Data:
-* DTED Data from https://earthexplorer.usgs.gov/ using Digital Elevation -> SRTM 1 Arc-Second Global data which are set at 30 meter
-* Road network:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php - All roads - ran getstreets.py to pull down all counties in California 
+* DTED Data from https://earthexplorer.usgs.gov/ using Digital Elevation -> 
+SRTM 1 Arc-Second Global data which are set at 30 meter
+* Road network:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php - 
+All roads - ran getstreets.py to pull down all counties in California 
 * Census blocks:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2016&layergroup=Blocks+%282010%29
 
 ## General System Prep:
 * Install projections /usr/local/gis/proj4 from egis
 * Install qgis (pip install qgis)
 * Install shapely (pip install shapely==1.6b4)
+* Install networkx to perform the network analysis (shortest_path)  
+  * update - looking at possibly using igraph  
+    * brew install igraph  
+    * pip install python-igraph  
+    * and maybe supported by https://pypi.org/project/s2g/0.2.3/ to load the graph 
+    into the igraph
 
 https://gis.stackexchange.com/questions/82935/ogr-layer-intersection
 
@@ -76,12 +92,12 @@ are possibly issues with that in that centroids of complex polygons are not alwa
 polygon.  That said, I think a good enough approximation.
 
 4.  For each origin/destination, find the shortest distance to a street and created new lines 
-from census block centroids to the road network (**collect_commute_stats_block_level_with_extend.py**).  This 
+from census block centroids to the road network (**connect_block_centroids_to_nearest_streets_extended.py**).  This 
 writes to a csv file with the start and end coordinates.  This operates on the *tl_2016_06_tabblock10_centroids*
-shape file created in the previous step.  ***PreProcessBlockCentroidStreetLines*** 
+shapefile created in the previous step.  ***PreProcessBlockCentroidStreetLines*** 
 creates a point CSV with the points on the street and a segment CSV with the LINESTRING 
 definition of the segment connecting the block centroid to the nearest street.  
-  
+
 5.  Next we merge the centroid connectors with the clipped LA county street segments, 
 *tl_2016_06000_roads_la_clipped* by creating a shape file out of the LINESTRING CSV created 
 in the previous step.  We run **union_streets_connectors.py** with option 3 to execute both 

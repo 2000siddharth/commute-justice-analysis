@@ -1,8 +1,10 @@
 from osgeo import ogr
+import configparser, os
 
 # From http://gis.stackexchange.com/questions/7436/how-to-add-attribute-field-to-existing-shapefile-via-python-without-arcgis?rq=1
-
-censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10.shp"
+config = configparser.ConfigParser()
+config.read(os.getcwd() + '/params.ini')
+censussrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10'] + '.shp'
 
 census = ogr.Open(censussrc, 1)
 censuslayer = census.GetLayer()

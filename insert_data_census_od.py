@@ -1,7 +1,10 @@
 import csv
 from census.origin_destination_db import OriginDestinationDB
+import configparser, os
 
-odsrc = "/Users/cthomas/Development/Data/Census/ca_od_main_JT00_2014.csv"
+config = configparser.ConfigParser()
+config.read(os.getcwd() + '/params.ini')
+odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
 
 odb = OriginDestinationDB()
 

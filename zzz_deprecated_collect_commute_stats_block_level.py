@@ -1,15 +1,13 @@
 from osgeo import ogr
 import csv
-import sys
-import time
 from census.origin_destination_db import OriginDestinationDB
 from census.census_block_centroids_sp import CensusBlockCentroids
 from network.streets import Streets
-
+import configparser, os
 
 # From http://gis.stackexchange.com/questions/7436/how-to-add-attribute-field-to-existing-shapefile-via-python-without-arcgis?rq=1
 
-censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+
 
 odDictionary = {}
 
@@ -22,8 +20,8 @@ def AppendRecordToDict(row):
 # dictionary key is the origin (2nd column) and the inner 
 # dictionary key is the destination (1st column) and the remainder
 # are all the other fields
-def BuildOriginDestinationDictionary():
-  odsrc = "/Users/cthomas/Development/Data/Census/ca_od_main_JT00_2014.csv"
+def BuildOriginDestinationDictionary(config):
+  odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
   
   n = 0
   with open(odsrc, mode='r') as infile:
@@ -42,8 +40,9 @@ def BuildOriginDestinationDictionary():
 # and grab the geoid which is the block code, then find the centroid
 # with that ID, then iterate over each of the origin IDs and find the
 # target IDs, calculate the distance traveled for each and store in dictionary
-def ProcessBlockCommute():
+def ProcessBlockCommute(config):
 
+  censussrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
   census = ogr.Open(censussrc, 0)
   censuslayer = census.GetLayer()
 
@@ -82,7 +81,7 @@ def ProcessBlockCommute():
 # def PreProcessBlockCentroidStreetLines():
 #
 #   pointlog = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
-#   streetsegmentlog = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
+#   streetsegmentlog = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Street_Segment_Block_Centroid_Connectors'] + '.csv'
 #
 #   pointlogfile = open(pointlog, 'a')
 #   streetlogfile = open(streetsegmentlog, 'a')

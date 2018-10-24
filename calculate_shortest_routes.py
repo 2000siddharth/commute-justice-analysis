@@ -3,16 +3,16 @@ import sys
 from census.origin_destination_db import OriginDestinationDB
 from census.census_block_centroids_sp import CensusBlockCentroids
 from network.streets import Streets
-
-rand_census_blocks_src = "/Users/cthomas/Development/Data/spatial/Census/singlesource_2016_06_tabblock10.shp"
-
-la_censussrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+import configparser, os
 
 # Iterate over every census block on the area (Los Angeles for now)
 # and grab the geoid which is the block code, then find the centroid
 # with that ID, then iterate over each of the origin IDs and find the
 # target IDs, calculate the distance traveled for each and store in dictionary
-def ProcessBlockCommutes():
+def ProcessBlockCommutes(config):
+
+  la_censussrc = config['SPATIAL']['BASE_STREET_PATH'] + \
+                 config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
 
   census = ogr.Open(la_censussrc, 0)
   censuslayer = census.GetLayer()
@@ -64,11 +64,17 @@ def ProcessBlockCommutes():
 # and grab the geoid which is the block code, then find the centroid
 # with that ID, then iterate over each of the origin IDs and find the
 # target IDs, calculate the distance traveled for each and store in dictionary
-def ProcessBlockCommutesRAND():
+def ProcessBlockCommutesRAND(config):
 
   print("Starting")
 
 #  census = ogr.Open(censussrc, 0)
+  la_censussrc = config['SPATIAL']['BASE_STREET_PATH'] + \
+                 config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
+
+  rand_census_blocks_src = config['SPATIAL']['BASE_STREET_PATH'] + \
+                           config['SPATIAL']['RAND_Singlesource_Tabblock'] + '.shp'
+
   census = ogr.Open(rand_census_blocks_src, 0)
   censuslayer = census.GetLayer()
 
@@ -126,5 +132,15 @@ def ProcessBlockCommutesRAND():
 
     census = None
 
-print ("starting in main")
-ProcessBlockCommutesRAND()
+
+def main(argv):
+
+  print("starting in main")
+  ()
+  config = configparser.ConfigParser()
+  config.read(os.getcwd() + '/params.ini')
+
+  ProcessBlockCommutesRAND(config)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

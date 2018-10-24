@@ -1,7 +1,10 @@
 import csv
 from census.origin_destination_db import OriginDestinationDB
+import configparser, os
 
-odsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/new_block_centroid_intersections.csv"
+config = configparser.ConfigParser()
+config.read(os.getcwd() + '/params.ini')
+odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Block_Centroid_Intersections'] + '.csv'
 
 odb = OriginDestinationDB()
 
@@ -20,7 +23,7 @@ with open(odsrc, mode='r') as infile:
     odb.insert(insert, insert_values)
 odb.commit()
 
-odsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/street_segment_block_centroid_connectors.csv"
+odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Street_Segment_Block_Centroid_Connectors'] + '.csv'
 
 n = 0
 with open(odsrc, mode='r') as infile:

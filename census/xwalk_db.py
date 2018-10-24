@@ -1,7 +1,7 @@
 import sqlite3
 from .census_db import *
 
-class XWalkDB(CensusDB):
+class XwalkDB(CensusDB):
 
   # some constants about the database table
   tbl = 'xwalk'
@@ -11,5 +11,3 @@ class XWalkDB(CensusDB):
     blockSQL = "SELECT * FROM xwalk WHERE tabblk2010=?"
     result, block = self.select_many(blockSQL, [geoid])
     return block
-
-

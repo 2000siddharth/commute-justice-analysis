@@ -31,8 +31,8 @@ class Streets(multiprocessing.Process):
     self.process_count = 0
 
     self.SRID = 32711  # UTM zone 11S, WGS 84
-    self.roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads_la_clipped.shp"
-    self.blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+    self.roadsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines'] + '.shp'
+    self.blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
 
     self.roadnetwork = ogr.Open(self.roadsrc)
     self.roadlayer = self.roadnetwork.GetLayer(0)

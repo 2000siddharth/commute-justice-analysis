@@ -1,7 +1,8 @@
 import csv
 from census.xwalk_db import XWalkDB
+import configparser, os
 
-odsrc = "/Users/cthomas/Development/Data/Census/ca_xwalk.csv"
+odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Xwalk'] + '.csv'
 
 odb = XWalkDB()
 

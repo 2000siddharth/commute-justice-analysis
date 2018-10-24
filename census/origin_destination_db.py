@@ -1,4 +1,3 @@
-import sqlite3
 from .census_db import *
 
 class OriginDestinationDB(CensusDB):

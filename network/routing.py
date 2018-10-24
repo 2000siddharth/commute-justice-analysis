@@ -1,7 +1,7 @@
 from osgeo import ogr
 
 roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads.shp"
-blocksrc = "/Users/cthomas/Development/Data/spatial/Census/tl_2016_06_tabblock10_centroids.shp"
+blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
 
 roadnetwork = ogr.Open(roadsrc)
 roadlayer  = roadnetwork.GetLayer(0)
