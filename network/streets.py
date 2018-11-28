@@ -112,7 +112,7 @@ class Streets():
   # https://gis.stackexchange.com/questions/213369/how-to-calculate-edge-length-in-networkx
   # https://gis.stackexchange.com/questions/211053/inaccurate-output-missing-features-while-reading-a-shapefile-into-networkx/211103#211103
   # Cribbed Shape to DiGraph conversion here:  https://stackoverflow.com/questions/46114754/osmnx-and-networkx-shortest-path-length-and-edge-attributes
-  def InitNetworkGraph(self):
+  def InitNetworkGraphPandas(self):
 
     start = time.time()
 
@@ -551,9 +551,9 @@ class Streets():
         ring.AddPoint(bufferedPoint[0], bufferedPoint[1])
       ogrPoly = ogr.Geometry(ogr.wkbPolygon)
       ogrPoly.AddGeometry(ring)
-      print ("About to set spatial filter")
+      # print ("About to set spatial filter")
       self.roadlayer_origin.SetSpatialFilter(ogrPoly)
-      print ("Set spatial filter!")
+      # print ("Set spatial filter!")
 
       enoughSegments = (self.roadlayer_origin.GetFeatureCount() > 1)
       bufferSize = bufferSize + 0.0005

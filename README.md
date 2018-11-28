@@ -99,11 +99,19 @@ creates a point CSV with the points on the street and a segment CSV with the LIN
 definition of the segment connecting the block centroid to the nearest street.  
 
 5.  Next we merge the centroid connectors with the clipped LA county street segments, 
-*tl_2016_06000_roads_la_clipped* by creating a shape file out of the LINESTRING CSV created 
-in the previous step.  We run **union_streets_connectors.py** with option 3 to execute both 
-steps of the creating the *street_segment_block_centroid_connectors* shape file and merging 
-it with the county streets.    Validated this works via QGIS by running a few examples of the network road graph method.
+*tl_2016_06000_roads_la_clipped* by creating a shapefile out of the LINESTRING CSV created 
+in the previous step.  We run **union_streets_connectors.py** with option 4 to execute step 1,
+convert CSV to shapefile (result street_segment_block_centroid_connectors_extend.shp), step 2, 
+intersect the centroid connectors to the streets (result tl_2016_06000_roads_la_clipped_extended.shp), 
+and step 3 merging the streets and centroids from step 2 with the remaining streets (those not 
+intersected by centroid connectors) (result tl_2016_06000_roads_la_clipped_extended.shp again).  
+Validated this works via QGIS by running a few examples of the network road graph method.
 
-6.  Then we run **calculate_shortest_routes.py** which uses the streets class’ 
-***InitNetworkGraph*** method to initialize a networkx graph and then ***GetShortestRoute*** 
+6. To create an routable network, need to split all street segments so there are nodes
+at each intersecting point.   Run SplitLinesWithLines' split_lines_with_lines method
+with the same source as both network A and B.  This largely uses the Shapely intersect
+and split methods to get the job done.  Can result in a 5-10x network size (# edges).
+
+7.  Then we run **calculate_shortest_routes.py** which uses the streets class’ 
+***InitNetworkGraphPandas*** method to initialize a networkx graph and then ***GetShortestRoute*** 
 which calls on nx.shortest_path

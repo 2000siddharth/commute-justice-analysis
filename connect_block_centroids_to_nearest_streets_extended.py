@@ -69,13 +69,13 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
     n += 1
 
     if (n % 2000) == 0:
-      print ("Processed {}".format(str(n)))
+      print ("+++ Processed {}".format(str(n)))
 
     homegeoid = censusblock.GetField("GeoID")
     homeGeometry = censusblock.GetGeometryRef()
 
     if homegeoid not in dictGeoIDs:
-      print("Processing Home GEO {}".format(homegeoid))
+      print("    Processing Home GEO {}".format(homegeoid))
       streets.FilterNearbyStreets(logLevel, homeGeometry)
       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
       if nearest_point_on_street != None:

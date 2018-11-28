@@ -4,9 +4,11 @@ import csv
 from math import sqrt
 import sys
 import configparser, os
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape, Point, LineString
 from shapely.ops import cascaded_union
+from shapely.wkt import loads
 from fiona import collection
+from census.origin_destination_db import OriginDestinationDB
 
 # Intersect the census provided streets with the census block centroid street connectors
 # http://gdal.org/python/osgeo.ogr.Layer-class.html#Union
@@ -47,7 +49,7 @@ def CreateShapeFromCSV(csvFileName):
 
   # create the layer
   print('About to create layer')
-  layer = data_source.CreateLayer('street_connectors', srs, ogr.wkbLineString)
+  layer = data_source.CreateLayer(csvFileName.replace('.csv', ''), srs, ogr.wkbLineString)
 
   field_name = ogr.FieldDefn('GeoID', ogr.OFTString)
   field_name.SetWidth(16)
@@ -103,7 +105,8 @@ def SetCensusRoadProperties (source_feature, new_feature):
 
 
 def IsDangle (line_geometry, dangle_length):
-    return line_geometry.Length() <= dangle_length
+    return line_geometry.Length() <= (dangle_length + dangle_length / 10) and \
+           line_geometry.Length() >= (dangle_length - dangle_length / 10)
 
 def LineSegmentCount(line_geometry_list):
     line_count = 0
@@ -182,7 +185,7 @@ def ExtendStreetStreetSegment(street_segment_geom, connector_segment_geom):
 
         street_segment_geom = ExtendLine(street_segment_geom,
                                          (line_node_index == 0),
-                                         start_point, end_point, 0.0000005)
+                                         start_point, end_point, 0.0000002)
         return street_segment_geom
 
     return None
@@ -201,7 +204,7 @@ def CopyFeature (source_feature, target_layer, target_layerDefn, origin = -1):
     new_feature = None
 
 def CreateFeatures(census_street_feature, merged_layer, merged_layer_defn,
-                   geo_id, census_street_geom):
+                   geo_id, census_street_geom, total_count):
     '''
     Creates new features in the merged layer assuming that a Union happened
     and that we have one or more census block connectors split at the street
@@ -234,21 +237,26 @@ def CreateFeatures(census_street_feature, merged_layer, merged_layer_defn,
     total_line_seg_count = LineSegmentCount(census_street_geom)
     new_feature = ogr.Feature(merged_layer_defn)
     for street_line in census_street_geom:
-        print ('  Geometry Feature Count {}'.format(str(line_count)))
+        # print ('  Geometry Feature Count {} for {}'.format(str(line_count), geo_id))
         process_line = False
         if  (line_count <= total_line_seg_count / 2):
-            SetCensusRoadProperties(census_street_feature, new_feature)
-            # print ('    We have the source street line {} len: {}'.format(street_line, street_line.Length()))
-            process_line = True
+            if not IsDangle(street_line, 0.0000005):
+              SetCensusRoadProperties(census_street_feature, new_feature)
+              new_feature.SetField('GeoID', geo_id)
+              new_feature.SetField('TRACKID', geo_id + "." + str(total_count) + "." + str(line_count))
+              # print ('    We have the source street line {} len: {}'.format(street_line, street_line.Length()))
+              process_line = True
         else:
-            if not IsDangle(street_line, 0.000001):
+            if not IsDangle(street_line, 0.0000005):
                 # print('    We have the centroid connector {} that is NOT a dangle; connector count: {}, Len {}:  {}'.format(connector_geoIDs_list,
                 #                                                                          str(connector_count),
                 #                                                                              street_line.Length(),
                 #                                                                                           street_line))
                 # We have a rare case that the connector overlap (dangle) ran directly over the
                 # street segment, meaning the two were in the same direction
-                new_feature.SetField('GeoID', geo_id)
+                # We don't want to set the geoid for non-connector segments
+                # new_feature.SetField('GeoID', geo_id)
+                new_feature.SetField('TRACKID', geo_id + "." + str(total_count) + "." + str(line_count))
                 connector_count += 1
                 process_line = True
             # else:
@@ -260,6 +268,12 @@ def CreateFeatures(census_street_feature, merged_layer, merged_layer_defn,
             merged_layer.CreateFeature(new_feature)
 
         line_count += 1
+
+def DeleteFeature(merged_layer, track_id):
+  merged_layer.SetAttributeFilter("TRACKID='" + track_id + "'")
+  street_feature_delete = merged_layer.GetNextFeature()
+  merged_layer.DeleteFeature(street_feature_delete.GetFID())
+  merged_layer.SetAttributeFilter(None)
 
 def CreateMergedLayer(merged_layer_file_name):
 
@@ -352,6 +366,41 @@ def GetInvertedIDList(linear_id_list, config):
 
     return inverted_id_list
 
+def GetLineString(linestring_geometry):
+  return loads(linestring_geometry.ExportToWkt())
+
+def GetMatchingStreet(census_street_layer, connector_geometry):
+  """Given a point, find the line that is closest to that point"""
+
+  has_more_features = True
+
+  connector_point = Point(connector_geometry.GetPoint(1)[0],connector_geometry.GetPoint(1)[1])
+
+  line_feature = census_street_layer.GetNextFeature()
+  while has_more_features:
+    line_string = GetLineString(ConvertMultilinestringtoLinestring(line_feature.GetGeometryRef()))
+    print("    Point Distance to line {}".format(connector_point.distance(line_string)))
+    if (connector_point.distance(line_string) >= 0.00000049 and connector_point.distance(line_string) <= 0.00000051):
+      return line_feature
+    line_feature = census_street_layer.GetNextFeature()
+    print("Type {}".format(type(line_feature)))
+    if (type(line_feature) != "None"):
+      has_more_features = False
+
+  return None
+
+def GetUsedIDList(config):
+  linear_id_list = []
+  connector_layer_src = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
+           config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
+  connector_layer = connector_layer_src.GetLayer(0)
+  for connector_feature in connector_layer:
+    linear_id = connector_feature.GetField('LINEARID')
+    if (linear_id not in linear_id_list):
+      linear_id_list.append(linear_id)
+
+  return linear_id_list
+
 def UnionBlockCentroidStreetLines(execute_level, config):
   """
   Merge the LA County street lines with the block centroid connector lines
@@ -372,46 +421,54 @@ def UnionBlockCentroidStreetLines(execute_level, config):
 
   street_layer_src =  config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines'] + '.shp'
   connector_layer_src = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Block_Centroid_Connectors'] + '.csv'
+  srs = osr.SpatialReference()
+  srs.ImportFromEPSG(4326)
 
-  if (execute_level == '1' or execute_level == '3'):
+  driver = ogr.GetDriverByName('ESRI Shapefile')
+  """First, create the connector_network_layer from the CSV file created 
+      by the connect_block_centroids_to_neares_streets_extend.py script.
+      This only needs to be run once per iteration - if built and testing
+      the unioning, then this is not needed and should be using execute_level 2"""
+  if (execute_level == '1' or execute_level == '4'):
     print('Creating connectors from CSV')
     CreateShapeFromCSV(connector_layer_src)
 
-  if (execute_level == '2' or execute_level == '3'):
+  """Here we are going to combine the Street Centerlines with the block centroid connectors
+     using a variety of means.  The new file will have the fields from the """
+  if (execute_level == '2' or execute_level == '4'):
     census_street_network = ogr.Open(street_layer_src)
     census_street_layer = census_street_network.GetLayer(0)
 
     connector_network = ogr.Open(connector_layer_src.replace('.csv', '.shp'))
     connector_layer = connector_network.GetLayer(0)
 
-    # PrintFields(census_street_layer)
     # create the spatial reference, WGS84
-    srs = osr.SpatialReference()
-    srs.ImportFromEPSG(4326)
-
-    driver = ogr.GetDriverByName('ESRI Shapefile')
-    data_source = driver.CreateDataSource(street_layer_src.rsplit(config['SPATIAL']['BASE_STREET_PATH']))
-    extended_layer = data_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
+    data_source = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+                  config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
+    connector_and_streets_intersected_layer = data_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
                                            srs, ogr.wkbLineString)
 
     # Create the field definitions
     new_field = ogr.FieldDefn('GeoID', ogr.OFTString)
     new_field.SetWidth(16)
-    extended_layer.CreateField(new_field)
+    connector_and_streets_intersected_layer.CreateField(new_field)
     new_field = ogr.FieldDefn('FULLNAME', ogr.OFTString)
     new_field.SetWidth(100)
-    extended_layer.CreateField(new_field)
+    connector_and_streets_intersected_layer.CreateField(new_field)
     new_field = ogr.FieldDefn('LINEARID', ogr.OFTString)
     new_field.SetWidth(22)
-    extended_layer.CreateField(new_field)
+    connector_and_streets_intersected_layer.CreateField(new_field)
     new_field = ogr.FieldDefn('MTFCC', ogr.OFTString)
     new_field.SetWidth(5)
-    extended_layer.CreateField(new_field)
+    connector_and_streets_intersected_layer.CreateField(new_field)
     new_field = ogr.FieldDefn('RTTYP', ogr.OFTString)
     new_field.SetWidth(1)
-    extended_layer.CreateField(new_field)
+    connector_and_streets_intersected_layer.CreateField(new_field)
+    new_field = ogr.FieldDefn('TRACKID', ogr.OFTString)
+    new_field.SetWidth(40)
+    connector_and_streets_intersected_layer.CreateField(new_field)
 
-    extended_layer_defn = extended_layer.GetLayerDefn()
+    connector_and_streets_intersected_layer_defn = connector_and_streets_intersected_layer.GetLayerDefn()
 
     total_count = 0
 
@@ -426,201 +483,216 @@ def UnionBlockCentroidStreetLines(execute_level, config):
     #                                    'OR GeoID='060379001021519' OR GeoID='060379001021506' OR GeoID='060379002011297''
     #                                    'OR GeoID='060375531004010' OR GeoID='060375542031006' OR GeoID='060379002011304'' )
     # connector_layer.SetAttributeFilter('GeoID='060375541051003' OR GeoID='060375541051002' OR GeoID='060375545213009' OR GeoID='060375545213009'')
+    #connector_layer.SetAttributeFilter("GeoID='060373011006013' OR GeoID='060373011006014' OR GeoID='060373011003012' "
+    #connector_layer.SetAttributeFilter("GeoID='060373011006013' OR GeoID='060373011006014' OR GeoID='060373011003012' "
+    #                                  "OR GeoID='060373011002008' OR GeoID='060373011002012' OR GeoID='060373011002009'")
+    # connector_layer.SetAttributeFilter("GeoID='060379800061018'")
+    # connector_layer.SetAttributeFilter("GeoID='060371284003005' OR GeoID='060371284003006' OR GeoID='060371284003002'")
+    # connector_layer.SetAttributeFilter("GeoID='060371284003005' OR GeoID='060371284003006'")
     linearidlist = []
-    for connector_feature in connector_layer:
+    odb = OriginDestinationDB()
+
+    home_geoids_in_los_angeles = 0
+    home_geoids_out_los_angeles = 0
+    for homegeoid in odb.GetOriginGeoIds('060377019023015'):
+      print ("Home GeoID {}".format(homegeoid[0]))
+      connector_layer.SetAttributeFilter("GeoID='" + homegeoid[0] + "'")
+      if connector_layer.GetFeatureCount() > 0:
+        home_geoids_in_los_angeles += 1
+        connector_feature = connector_layer.GetNextFeature()
         connector_geom = connector_feature.GetGeometryRef()
         geom_id = connector_feature.GetField('GeoID')
-        print('Working on Connector {}'.format(geom_id))
+        print('Working on Connector [{}]: {}'.format(str(total_count), geom_id))
         total_count += 1
         # Buffer by ~0.1 meter or 0.0000001 decimal degrees in LA.
-        bounding_box = connector_geom.Buffer(0.0000001)
+        connector_end_point = ogr.Geometry(ogr.wkbPoint)
+        connector_end_point.AddPoint(connector_geom.GetPoint(1)[0],connector_geom.GetPoint(1)[1])
+        bounding_box = connector_end_point.Buffer(0.000001)
         census_street_layer.SetSpatialFilter(bounding_box)
         street_count = 0
         if (census_street_layer.GetFeatureCount() > 0):
             continue_processing = False
-            for census_street_feature in census_street_layer:
-                linearid = census_street_feature.GetField('LINEARID')
-                if (linearid not in linearidlist):
-                    linearidlist.append(linearid)
-                print('Working on Street {} with a connector feature Count {}'.format(
-                    census_street_feature.GetField('LINEARID'), census_street_layer.GetFeatureCount()))
-                continue_processing = True
-                census_street_geom = census_street_feature.GetGeometryRef()
-                census_street_geom = ConvertMultilinestringtoLinestring(census_street_geom)
-                # Following union should create a MULTILINESTRING with 2 parts from the street network
-                # and two parts from the connector.  We then want to drop the dangle
-                # if (census_street_geom.Touches(connector_geom)):
-                #     print  ('They touched')
-                # print('Working on Street {}'.format(census_street_geom))
-                print('     Geometry is now {}'.format(census_street_geom.GetGeometryName()))
-                if (census_street_geom.Intersects(connector_geom)):
-                    census_street_geom = census_street_geom.Union(connector_geom)
+            track_id = ''
+            street_feature = census_street_layer.GetNextFeature()
+            found_intersection = False
+            while (not found_intersection) and (street_count < census_street_layer.GetFeatureCount()):
+              street_geom = street_feature.GetGeometryRef()
+              if (street_geom.Intersects(connector_geom)):
+                found_intersection = True
+              else:
+                street_feature = census_street_layer.GetNextFeature()
+                street_count += 1
+
+            if (found_intersection):
+              linearid = street_feature.GetField('LINEARID')
+              continue_processing = True
+
+              if (linearid not in linearidlist):
+                  linearidlist.append(linearid)
+              else:
+                  print ("      !! We are pulling from an already processed street {}".format(linearid))
+                  # connector_and_streets_intersected_layer.SetAttributeFilter("LINEARID='" + linearid + "'")
+                  connector_and_streets_intersected_layer.SetSpatialFilter(bounding_box)
+                  print ("      !! This spatial filter resulted in {} selected streets".format(connector_and_streets_intersected_layer.GetFeatureCount()))
+                  street_feature = GetMatchingStreet(connector_and_streets_intersected_layer, connector_geom)
+                  if (street_feature is not None):
+                    street_geom = street_feature.GetGeometryRef()
+                    try:
+                      track_id = street_feature.GetField("TRACKID")
+                    except:
+                      print("    ----- For some reason {} has no feature to act on with count {}".format(linearid,
+                                                                                                       census_street_layer.GetFeatureCount()))
+
+              if (street_feature is not None):
+                print ("    Working on Street {} with a connector feature Count {}".format(
+                    street_feature.GetField('LINEARID'), census_street_layer.GetFeatureCount()))
+
+                street_geom = ConvertMultilinestringtoLinestring(street_geom)
+
+                if (street_geom.Intersects(connector_geom)):
+                    street_geom = street_geom.Union(connector_geom)
                 else:
-                    print('    Did not intersect, we are going to try extending street {}'.format(
-                        census_street_feature.GetField('LINEARID')))
-                    census_street_geom_tmp = ExtendStreetStreetSegment(census_street_geom, connector_geom)
-                    if census_street_geom_tmp != None:
-                        if (census_street_geom_tmp.Intersects(connector_geom)):
-                            census_street_geom = census_street_geom_tmp.Union(connector_geom)
+                    print('    Did not intersect, we are going to try extending street {}'.format(linearid))
+                    street_geom_tmp = ExtendStreetStreetSegment(street_geom, connector_geom)
+                    if street_geom_tmp != None:
+                        if (street_geom_tmp.Intersects(connector_geom)):
+                            street_geom = street_geom_tmp.Union(connector_geom)
                         else:
+                            print('    >> We are giving up on intersecting this connector!!')
                             continue_processing = False
 
-            if continue_processing:
-                CreateFeatures(census_street_feature, extended_layer, extended_layer_defn, geom_id,
-                               census_street_geom)
-                #     break
+                if continue_processing:
+                    CreateFeatures(street_feature, connector_and_streets_intersected_layer, connector_and_streets_intersected_layer_defn, geom_id,
+                                   street_geom, total_count)
+
+                    # Now delete the original feature that got unioned with the connector
+                    if (len(track_id) > 0):
+                      print ("About to delete track id {}".format(track_id))
+                      DeleteFeature(connector_and_streets_intersected_layer, track_id)
+                    #     break
         else:
             # The connector did not intersect with any streets (unlikely but possible)
-            CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
+            CopyFeature(street_feature, connector_and_streets_intersected_layer, connector_and_streets_intersected_layer_defn)
+      else:
+        home_geoids_out_los_angeles += 1
 
-        if (total_count % 1000 == 0):
-            print('We have processed {} segments'.format(str(total_count)))
+      if (total_count % 100 == 0):
+          print('We have processed {} segments'.format(str(total_count)))
 
+    connector_and_streets_intersected_layer.SetSpatialFilter(None)
     census_street_layer.SetSpatialFilter(None)
+    connector_and_streets_intersected_layer = None
 
-    # Now we add the missing street segments (those that did not intersect with any connectors)
-    # We have to do this in small increments as the full list will break - got a memory
-    # exception from OSGEO when i tried an attribute filter with more than 10000 entries
-    # First we invert the list of LINEARIDs from those we've finished to all
-    # the IDs in the street layer
-    if (1 == 2):
-        print ('Calculating inverted ID List')
-        inverted_linearidlist = GetInvertedIDList(linearidlist, config)
-        total_set_count = 0
-        # then we'll run batches of queries from this list of the street layer to add back to the merged layer
-        continue_processing = True
-        print ('Processing batches of the street segments')
-        while (continue_processing):
-            total_set_count += 1
-            inverted_linearid_sublist = []
-            for x in range(100):
-                if (len(inverted_linearidlist) > 0):
-                    inverted_linearid_sublist.append(inverted_linearidlist.pop())
-                else:
-                    continue_processing = False
-                    break
+    print("We found {} homes in LA and {} ourside of LA".format(home_geoids_in_los_angeles, home_geoids_out_los_angeles))
 
-            attribute_filter = GetLinearIDInclusionList(inverted_linearid_sublist)
+  if (execute_level == '3' or execute_level == '4'):
+    """Now we add the missing street segments (those that did not intersect with any connectors)
+       We have to do this in small increments as the full list will break - got a memory
+       exception from OSGEO when i tried an attribute filter with more than 10000 entries
+       First we invert the list of LINEARIDs from those we've finished to all
+       the IDs in the street layer"""
+    print ('Calculating inverted ID List')
+    linearidlist = []
 
-            print('Inclusion filter = {}'.format(attribute_filter))
-            census_street_layer.SetAttributeFilter(attribute_filter)
-            if (census_street_layer.GetFeatureCount() > 0):
-                print('We have more than 0 features {}'.format(census_street_layer.GetFeatureCount()))
-                for census_street_feature in census_street_layer:
-                    CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
+    if (execute_level == '3'):
+      linearidlist = GetUsedIDList(config)
 
-            if (total_set_count % 10 == 0):
-                print('We have processed {} remaining street segments'.format(str(total_set_count)))
+    inverted_linearidlist = GetInvertedIDList(linearidlist, config)
+    census_street_network = ogr.Open(street_layer_src)
+    census_street_layer = census_street_network.GetLayer(0)
+    connector_and_streets_intersected_network = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
+                  config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp', 1)
+    connector_and_streets_intersected_layer = connector_and_streets_intersected_network.GetLayer(0)
+    connector_and_streets_intersected_layer_defn = connector_and_streets_intersected_layer.GetLayerDefn()
+
+    print("Our inverted list has {} entries vs those from connector list {}".format(
+      len(inverted_linearidlist), len(linearidlist)))
+
+    total_set_count = 0
+    # then we'll run batches of queries from this list of the street layer to add back to the merged layer
+    continue_processing = True
+    print ('Processing batches of the street segments')
+    while (continue_processing):
+        total_set_count += 1
+        inverted_linearid_sublist = []
+        for x in range(100):
+            if (len(inverted_linearidlist) > 0):
+                inverted_linearid_sublist.append(inverted_linearidlist.pop())
+            else:
+                continue_processing = False
                 break
 
-    # LINEARID 1103747746552 does seem to fit in the buffer, but doesn't intersect with anything
-    # First sweep we identify the connectors that don't intersect a street segment and we'll rewrite
-    # the street segment data to extend those files
-    # Then we'll union the connectors to the
+        attribute_filter = GetLinearIDInclusionList(inverted_linearid_sublist)
 
-    # Here we will look for any and all street segments that are near
-    # to census connectors but do not intersect them.  This most often
-    # happens at the end node of a street segment that touches a connector
-    # but does not technically intersect.  Even the Touches() method fails.
-    # census_street_layer.SetAttributeFilter('LINEARID='1101576648263' OR LINEARID='1101576665855' OR LINEARID='1101576666244''
-    #                                        ' OR LINEARID='1101576666055'  OR LINEARID='1101576666197'  OR LINEARID='1101576665939'')
-    # census_street_layer.SetAttributeFilter('LINEARID='1101576648263' OR LINEARID='1101576665855' '
-    #     ' OR LINEARID='1101576648546' OR LINEARID='1101576666115' OR LINEARID='1101576666031' ')
-    # Here we have 3 possible outcomes in this loop:
-    #   1 - the street doesn't intersect with any connectors, we simply make a copy of it
-    #   2 - the street intersects with one or more connectors, we
-    # for census_street_feature in census_street_layer:
-    #   census_street_geom = census_street_feature.GetGeometryRef()
-    #   print('Working on Street {}'.format(census_street_feature.GetField('LINEARID')))
-    #   census_street_geom = ConvertMultilinestringtoLinestring(census_street_geom)
-    #   total_count += 1
-    #   # Buffer by ~0.1 meter or 0.0000001 decimal degrees in LA.
-    #   bounding_box = census_street_geom.Buffer(0.0000001)
-    #   connector_layer.SetSpatialFilter (bounding_box)
-    #   if (connector_layer.GetFeatureCount() > 0):
-    #       for connector_feature in connector_layer:
-    #           connector_geom  = connector_feature.GetGeometryRef()
-    #           print ('   We are working on Connector {}'.format(connector_feature.GetField('GeoID')))
-    #           # Following union should create a MULTILINESTRING with 2 parts from the street network
-    #           # and two parts from the connector.  We then want to drop the dangle
-    #           if (not census_street_geom.Intersects(connector_geom)):
-    #               print ('    Did not intersect, we are going to try extending street for connector {}'.format(connector_feature.GetField('GeoID')))
-    #               census_street_geom_ext = ExtendStreetStreetSegment(census_street_geom, connector_geom)
-    #               census_street_feature_new = ogr.Feature(extended_layer_defn)
-    #               SetCensusRoadProperties(census_street_feature, census_street_feature_new)
-    #               print ('       We got here')
-    #               census_street_feature_new.SetGeometry(census_street_geom_ext)
-    #               # census_street_geom = census_street_geom_ext
-    #               # PrintFeatureFields(census_street_layer, census_street_feature_new)
-    #               # print ('    Did not intersect, we have original geom {} \nand new feature {} '.format(census_street_geom,
-    #               #                                                                                       census_street_feature_new.GetGeometryRef()))
-    #
-    #       if (census_street_feature_new != None):
-    #           print('    === Copying new features')
-    #           CopyFeature(census_street_feature_new, extended_layer, extended_layer_defn)
-    #       else:
-    #           print('    === Copying orig features')
-    #           CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
-    #       census_street_feature_new = None
-    #   else:
-    #     # The street segment intersected with no connectors, just copy it
-    #     CopyFeature(census_street_feature, extended_layer, extended_layer_defn)
-    #   if (total_count % 1000 == 0):
-    #       print('We have processed {} segments'.format(str(total_count)))
+        # print('Inclusion filter = {}'.format(attribute_filter))
+        census_street_layer.SetAttributeFilter(attribute_filter)
+        if (census_street_layer.GetFeatureCount() > 0):
+            print('We have {} features'.format(census_street_layer.GetFeatureCount()))
+            for census_street_feature in census_street_layer:
+                CopyFeature(census_street_feature, connector_and_streets_intersected_layer, connector_and_streets_intersected_layer_defn)
+
+        if (total_set_count % 10 == 0):
+            print('We have processed {} remaining street segments'.format(str(total_set_count)))
 
     print ('We\'re about to commit layer!')
 
-    if (1 == 2):
-        # Now we'll union the two sets, street segments and census connectors
-        # First reestablish layer connection after last round of edits
-        full_merged_ds = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
-                                                config['SPATIAL']['LA_Street_Centerlines_Merged'] + '/.shp')
-        full_merged_layer = full_merged_ds.CreateLayer(
-                                                config['SPATIAL']['LA_Street_Centerlines_Merged'],
-                                                srs, ogr.wkbLineString)
-        # Create the field definitions
-        new_field = ogr.FieldDefn('GeoID', ogr.OFTString)
-        new_field.SetWidth(16)
-        full_merged_layer.CreateField(new_field)
-        new_field = ogr.FieldDefn('FULLNAME', ogr.OFTString)
-        new_field.SetWidth(100)
-        full_merged_layer.CreateField(new_field)
-        new_field = ogr.FieldDefn('LINEARID', ogr.OFTString)
-        new_field.SetWidth(22)
-        full_merged_layer.CreateField(new_field)
-        new_field = ogr.FieldDefn('MTFCC', ogr.OFTString)
-        new_field.SetWidth(5)
-        full_merged_layer.CreateField(new_field)
-        new_field = ogr.FieldDefn('RTTYP', ogr.OFTString)
-        new_field.SetWidth(1)
-        full_merged_layer.CreateField(new_field)
+    if (execute_level == '5'):
+      """Now we'll union the two sets, street segments and census connectors
+         First reestablish layer connection after last round of edits"""
 
-        full_merged_layer_defn = full_merged_layer.GetLayerDefn()
+      full_merged_ds = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+                                              config['SPATIAL']['LA_Street_Centerlines_Merged'] + '.shp')
+      full_merged_layer = full_merged_ds.CreateLayer(
+                                              config['SPATIAL']['LA_Street_Centerlines_Merged'],
+                                              srs, ogr.wkbLineString)
+      # Create the field definitions
+      new_field = ogr.FieldDefn('GeoID', ogr.OFTString)
+      new_field.SetWidth(16)
+      full_merged_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('FULLNAME', ogr.OFTString)
+      new_field.SetWidth(100)
+      full_merged_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('LINEARID', ogr.OFTString)
+      new_field.SetWidth(22)
+      full_merged_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('MTFCC', ogr.OFTString)
+      new_field.SetWidth(5)
+      full_merged_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('RTTYP', ogr.OFTString)
+      new_field.SetWidth(1)
+      full_merged_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('TRACKID', ogr.OFTString)
+      new_field.SetWidth(40)
+      full_merged_layer.CreateField(new_field)
 
-        extended_ds = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
-                               config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
-        extended_layer = extended_ds.GetLayer()
-        for extended_feature in extended_layer:
-            out_feat = ogr.Feature(full_merged_layer_defn)
-            out_feat.SetGeometry(extended_feature.GetGeometryRef().Clone())
-            SetCensusRoadProperties(extended_feature, out_feat)
-            PrintFeatureFields(extended_layer, out_feat)
+      full_merged_layer_defn = full_merged_layer.GetLayerDefn()
 
-            full_merged_layer.CreateFeature(out_feat)
-            out_feat = None
-            full_merged_layer.SyncToDisk()
+      extended_ds = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
+                             config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
+      connector_and_streets_intersected_layer = extended_ds.GetLayer(0)
 
-        connector_network = ogr.Open(connector_layer_src.replace('.csv', '.shp'))
-        connector_layer = connector_network.GetLayer(0)
-        for connector_feature in connector_layer:
-            out_feat = ogr.Feature(full_merged_layer_defn)
-            out_feat.SetGeometry(connector_feature.GetGeometryRef().Clone())
-            out_feat.SetField('GeoID', connector_feature.GetField('GeoID'))
-            full_merged_layer.CreateFeature(out_feat)
-            out_feat = None
-            full_merged_layer.SyncToDisk()
+      # Adding the connector segments
+      for extended_feature in connector_and_streets_intersected_layer:
+          out_feat = ogr.Feature(full_merged_layer_defn)
+          out_feat.SetGeometry(extended_feature.GetGeometryRef().Clone())
+          SetCensusRoadProperties(extended_feature, out_feat)
+          # PrintFeatureFields(connector_and_streets_intersected_layer, out_feat)
 
-        full_merged_layer = None
+          full_merged_layer.CreateFeature(out_feat)
+          out_feat = None
+          full_merged_layer.SyncToDisk()
+
+      connector_network = ogr.Open(connector_layer_src.replace('.csv', '.shp'))
+      connector_layer = connector_network.GetLayer(0)
+      for connector_feature in connector_layer:
+          out_feat = ogr.Feature(full_merged_layer_defn)
+          out_feat.SetGeometry(connector_feature.GetGeometryRef().Clone())
+          out_feat.SetField('GeoID', connector_feature.GetField('GeoID'))
+          full_merged_layer.CreateFeature(out_feat)
+          out_feat = None
+          full_merged_layer.SyncToDisk()
+
+      full_merged_layer = None
 
     if (1 == 2):
         # Now we merge - let's see what happens
@@ -647,7 +719,7 @@ def UnionBlockCentroidStreetLines(execute_level, config):
   full_merged_layer = None
   census_street_layer = None
   merged_layer = None
-  extended_layer = None
+  connector_and_streets_intersected_layer = None
   data_source = None
 
 def main(argv):
@@ -656,9 +728,10 @@ def main(argv):
 
     print ('You must provide the run configuration.\n' +
            'Valid integer values include\n' +
-           '  1: run just the block centroid CSV to Shape\n' +
-           '  2: run 1 and merge the centroid connectors with the LA streets\n' +
-           '  3: run both 1 and 2')
+           '  1: run just the block centroid connector CSV to Shape (only once per full processing round)\n' +
+           '  2: intersect the centroid connectors with their nearest streets\n' +
+           '  3: merge the insersected centroid/streets with the remaining LA streets\n' +
+           '  4: run both 1, 2 and 3')
 
   else:
 

@@ -4,7 +4,7 @@ import configparser, os
 
 config = configparser.ConfigParser()
 config.read(os.getcwd() + '/params.ini')
-odsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
+odsrc = config['SPATIAL']['BASE_CENSUS_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
 
 odb = OriginDestinationDB()
 
@@ -18,6 +18,6 @@ with open(odsrc, mode='r') as infile:
       print("We're at record {}".format(str(n)))
       print ("Row {}".format(row[:11]))
       odb.commit()
-    insert = "INSERT INTO origindestination values (?,?,?,?,?,?,?,?,?,?,?,?)"
-    odb.insert(insert, row[:12])
+    insert = "INSERT INTO origindestination values (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    odb.insert(insert, row)
 odb.commit()

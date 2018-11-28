@@ -1,8 +1,12 @@
 import sqlite3
+import configparser, os
 
 class CensusDB():
 
-  census_sqlite = '/Users/cthomas/Development/Data/Census/census.db'
+  config = configparser.ConfigParser()
+  config.read(os.getcwd() + '/params.ini')
+  census_sqlite = config['DEFAULT']['BASE_CENSUS_PATH'] + \
+                  config['SPATIAL']['Census_DB']
 
   def __init__(self):
 
