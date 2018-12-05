@@ -7,31 +7,6 @@ import configparser, os
 from network.streets import Streets
 
 ogr.UseExceptions()
-odDictionary = {}
-
-def AppendRecordToDict(row):
-  items = odDictionary[row[1]]
-  items.append({row[0]: row[2:]})
-  odDictionary[row[1]] = items
-
-# Build a dictionary of lists of dictionaries where the outer
-# dictionary key is the origin (2nd column) and the inner 
-# dictionary key is the destination (1st column) and the remainder
-# are all the other fields
-def BuildOriginDestinationDictionary(config):
-  odsrc = config['SPATIAL']['BASE_CENSUS_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
-  
-  n = 0
-  with open(odsrc, mode='r') as infile:
-    reader = csv.reader(infile)
-    for row in reader:
-      n = n + 1
-      if (n % 10000) == 0:
-        print ("Dictionary has {} records, current record is {}".format(str(len(odDictionary)), row))
-      if row[1] in odDictionary:
-         AppendRecordToDict(row)
-      else:
-         odDictionary[row[1]] = [{row[0]: row[2:]}]
 
 def CreateBlockCentroidToStreetConnectorSegments(config):
 
@@ -99,9 +74,6 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
   census = None
   # block_centroid_intersection_pointfile.close()
   block_centroid_to_street_segment_file.close()
-
-# Run this once only - should be a separate file
-# BuildOriginDestinationDictionary(config)
 
 def main(argv):
 

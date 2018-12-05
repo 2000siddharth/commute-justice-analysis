@@ -84,7 +84,7 @@ Approach:
 parameters, e.g., sa01 and sa01_CmDst for commuter distance for that classification
 
 2. Load the origin-destination file (*ca_od_main_JT00_2014.csv*) into sqlite database 
-origin destination table via **insert_data_census.py script** - 14,090,000 records
+origin destination table via **insert_data_census_od.py script** - 14,090,000 records
 
 3. Create a census block centroid file - **create_census_centroid_points_los_angeles.py** operates on 
 the census block data and creates points that are geometric centroids for only Los Angeles county.   There 

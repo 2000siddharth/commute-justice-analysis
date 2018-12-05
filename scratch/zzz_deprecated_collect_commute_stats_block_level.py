@@ -42,7 +42,7 @@ def BuildOriginDestinationDictionary(config):
 # target IDs, calculate the distance traveled for each and store in dictionary
 def ProcessBlockCommute(config):
 
-  censussrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
+  censussrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
   census = ogr.Open(censussrc, 0)
   censuslayer = census.GetLayer()
 

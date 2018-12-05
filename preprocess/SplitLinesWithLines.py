@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from osgeo import ogr, osr
-from shapely.geometry import LineString, Point
-from shapely.ops import split, snap
+from osgeo import ogr
+from shapely.geometry import Point
+from shapely.ops import split
 from shapely.wkt import loads
-import fiona
-
 import os
 """
 ***************************************************************************

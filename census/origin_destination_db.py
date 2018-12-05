@@ -63,3 +63,11 @@ class OriginDestinationDB(CensusDB):
     setSQL = "UPDATE origindestination SET o_d_commute = ? WHERE h_geocode = ? and w_geocode = ?"
     # print ("about to execute SQL {} with homegeoid {} and workgeoid {} and length of {}".format(setSQL, homegeoid, workgeoid, route_length))
     self.exec(setSQL, (route_length, homegeoid, workgeoid))
+
+  def InsertBlockCommute(self, homegeoid, workgeoid, route_length):
+    setSQL = "INSERT INTO commute_distances (h_geocode, w_geocode, distance) VALUES (?, ?, ?)"
+    self.exec(setSQL, (str(homegeoid), str(workgeoid), route_length))
+
+  def TruncateBlockCommute(self):
+    setSQL = "DELETE FROM commute_distances"
+    self.exec_s(setSQL)

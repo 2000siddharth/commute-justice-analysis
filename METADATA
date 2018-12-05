@@ -15,7 +15,7 @@ contributors:  Aaron Kofner, Cord Thomas
 
 ptns:  ISX17-9103
 
-software:  Python, shapely, netowrkx, GDAL, GRASS
+software:  Python, shapely, networkx, GDAL, GRASS, OSMnx
 
 description:  Beyond what is stated in the abstract above, this package
 is developed to be able to assess the impact in total transportation costs, 

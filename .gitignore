@@ -3,3 +3,4 @@ __pycache__
 shortest_routes/*
 .idea/*
 *pyc
+scratch/*

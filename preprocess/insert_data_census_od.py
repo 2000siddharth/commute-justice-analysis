@@ -4,7 +4,7 @@ import configparser, os
 
 config = configparser.ConfigParser()
 config.read(os.getcwd() + '/params.ini')
-odsrc = config['SPATIAL']['BASE_CENSUS_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
+odsrc = config['DEFAULT']['BASE_CENSUS_PATH'] + config['SPATIAL']['CA_Origin_Destination'] + '.csv'
 
 odb = OriginDestinationDB()
 

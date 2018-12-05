@@ -19,7 +19,7 @@ class CensusDB():
   # Execute a statement not caring about the outcome, such
   # as an insert without caring about a provided autoincremented
   # key or an updated record count
-  def exec(self, sql_statement):
+  def exec_s(self, sql_statement):
     try:
       self.cur.execute(sql_statement)
       self.conn.commit()
