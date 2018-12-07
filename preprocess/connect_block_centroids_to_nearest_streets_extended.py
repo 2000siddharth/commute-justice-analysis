@@ -10,11 +10,6 @@ ogr.UseExceptions()
 
 def CreateBlockCentroidToStreetConnectorSegments(config):
 
-  # Originally was tracking and writing both the intersecting point and the resulting line - no need to track and write the point
-  # block_centroid_intersection_point = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Block_Centroid_Intersections_Extend'] + '.csv'
-    # block_centroid_intersection_pointfile = open(block_centroid_intersection_point, 'w')
-  # block_centroid_intersection_pointfile.write('Geometry\tGeoID\n')
-
   block_centroid_to_street_segment = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Block_Centroid_Connectors'] + '.csv'
   block_centroid_to_street_segment_file = open(block_centroid_to_street_segment, 'w')
   block_centroid_to_street_segment_file.write('Geometry\tGeoID\n')
@@ -57,7 +52,6 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
         nearest_point_on_street_extended = streets.ExtendLine(logLevel, homeGeometry, nearest_point_on_street, 0.0000005)
         if nearest_point_on_street_extended != None:
           dictGeoIDs[homegeoid] = 'POINT (' + str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')'
-          # block_centroid_intersection_pointfile.write('POINT (' + str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')\t\'' + homegeoid + '\'\n')
           block_centroid_to_street_segment_file.write('LINESTRING (' + str(homeGeometry.GetX()) + ' ' + str(homeGeometry.GetY()) + ',' +
                str(nearest_point_on_street_extended.GetX()) + ' ' + str(nearest_point_on_street_extended.GetY()) + ')\t\'' + homegeoid + '\'\n')
         else:

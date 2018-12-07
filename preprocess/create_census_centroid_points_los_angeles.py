@@ -8,12 +8,14 @@ import configparser, os
 config = configparser.ConfigParser()
 config.read(os.getcwd() + '/params.ini')
 
+la_and_surround_counties = ('029','037','059','065','071','111')
+
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 # Source file is all of california
 block_source = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL']['Census_Block10'] + '.shp'
 # Target will only include LA county
-block_centroid_target = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
+block_centroid_target = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL']['Census_Block10_Centroids_Near_LA'] + '.shp'
 
 print("Processing block_source {}\nand target {}".format(block_source, block_centroid_target))
 
@@ -41,7 +43,7 @@ with fiona.open(block_source, 'r') as source:
       county_id = feat['properties']['COUNTYFP10']
       aland10 = feat['properties']['ALAND10']
 
-      if (county_id == '037' and aland10 != 0):
+      if (county_id in la_and_surround_counties and aland10 != 0):
         feature = ogr.Feature(layer.GetLayerDefn())
         # Set the attributes using the values from the delimited text file
         feature.SetField("GeoID", geom_id)
