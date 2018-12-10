@@ -95,8 +95,8 @@ polygon.  That said, I think a good enough approximation.
 from census block centroids to the road network (**connect_block_centroids_to_nearest_streets_extended.py**).  This 
 writes to a csv file with the start and end coordinates.  This operates on the *tl_2016_06_tabblock10_centroids*
 shapefile created in the previous step.  ***PreProcessBlockCentroidStreetLines*** 
-creates a point CSV with the points on the street and a segment CSV with the LINESTRING 
-definition of the segment connecting the block centroid to the nearest street.  
+creates a segment CSV with the LINESTRING definition of the segment connecting the 
+block centroid to the nearest street.  
 
 5.  Next we merge the centroid connectors with the clipped LA county street segments, 
 *tl_2016_06000_roads_la_clipped* by creating a shapefile out of the LINESTRING CSV created 

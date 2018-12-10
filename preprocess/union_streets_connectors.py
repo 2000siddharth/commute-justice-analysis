@@ -4,10 +4,9 @@ import csv
 from math import sqrt
 import sys
 import configparser, os
-from shapely.geometry import mapping, shape, Point, LineString
-from shapely.ops import cascaded_union
+from shapely.geometry import Point
 from shapely.wkt import loads
-from fiona import collection
+from census.census_block_centroids_sp import CensusBlockCentroids
 from census.origin_destination_db import OriginDestinationDB
 
 # Intersect the census provided streets with the census block centroid street connectors
@@ -193,15 +192,16 @@ def ExtendStreetStreetSegment(street_segment_geom, connector_segment_geom):
 def CopyFeature (source_feature, target_layer, target_layerDefn, origin = -1):
 
     new_feature = ogr.Feature(target_layerDefn)
-    if (source_feature.GetDefnRef().GetFieldIndex('LINEARID') != -1) :
-        SetCensusRoadProperties(source_feature, new_feature)
-    else:
-        new_feature.SetField('GeoID', source_feature.GetField('GeoID'))
+    if (source_feature is not None):
+      if (source_feature.GetDefnRef().GetFieldIndex('LINEARID') != -1) :
+          SetCensusRoadProperties(source_feature, new_feature)
+      else:
+          new_feature.SetField('GeoID', source_feature.GetField('GeoID'))
 
-    new_feature.SetGeometry(source_feature.GetGeometryRef())
-    # PrintFeatureFields(target_layer, new_feature)
-    target_layer.CreateFeature(new_feature)
-    new_feature = None
+      new_feature.SetGeometry(source_feature.GetGeometryRef())
+      # PrintFeatureFields(target_layer, new_feature)
+      target_layer.CreateFeature(new_feature)
+      new_feature = None
 
 def CreateFeatures(census_street_feature, merged_layer, merged_layer_defn,
                    geo_id, census_street_geom, total_count):
@@ -401,7 +401,7 @@ def GetUsedIDList(config):
 
   return linear_id_list
 
-def UnionBlockCentroidStreetLines(execute_level, config):
+def UnionBlockCentroidStreetLines(execute_level, reentry, config):
   """
   Merge the LA County street lines with the block centroid connector lines
   to create a single dataset of all street segments and connector approximations
@@ -442,35 +442,44 @@ def UnionBlockCentroidStreetLines(execute_level, config):
     connector_network = ogr.Open(connector_layer_src.replace('.csv', '.shp'))
     connector_layer = connector_network.GetLayer(0)
 
-    # create the spatial reference, WGS84
-    data_source = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+    cbc = CensusBlockCentroids()
+
+    if reentry == 'yes':
+      connector_and_streets_intersected = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
                   config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
-    connector_and_streets_intersected_layer = data_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
+      connector_and_streets_intersected_layer = connector_and_streets_intersected.GetLayer(0)
+    else:
+
+      data_source = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+      config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
+      connector_and_streets_intersected_layer = data_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
                                            srs, ogr.wkbLineString)
 
-    # Create the field definitions
-    new_field = ogr.FieldDefn('GeoID', ogr.OFTString)
-    new_field.SetWidth(16)
-    connector_and_streets_intersected_layer.CreateField(new_field)
-    new_field = ogr.FieldDefn('FULLNAME', ogr.OFTString)
-    new_field.SetWidth(100)
-    connector_and_streets_intersected_layer.CreateField(new_field)
-    new_field = ogr.FieldDefn('LINEARID', ogr.OFTString)
-    new_field.SetWidth(22)
-    connector_and_streets_intersected_layer.CreateField(new_field)
-    new_field = ogr.FieldDefn('MTFCC', ogr.OFTString)
-    new_field.SetWidth(5)
-    connector_and_streets_intersected_layer.CreateField(new_field)
-    new_field = ogr.FieldDefn('RTTYP', ogr.OFTString)
-    new_field.SetWidth(1)
-    connector_and_streets_intersected_layer.CreateField(new_field)
-    new_field = ogr.FieldDefn('TRACKID', ogr.OFTString)
-    new_field.SetWidth(40)
-    connector_and_streets_intersected_layer.CreateField(new_field)
+      # Create the field definitions
+      new_field = ogr.FieldDefn('GeoID', ogr.OFTString)
+      new_field.SetWidth(16)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('FULLNAME', ogr.OFTString)
+      new_field.SetWidth(100)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('LINEARID', ogr.OFTString)
+      new_field.SetWidth(22)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('MTFCC', ogr.OFTString)
+      new_field.SetWidth(5)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('RTTYP', ogr.OFTString)
+      new_field.SetWidth(1)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+      new_field = ogr.FieldDefn('TRACKID', ogr.OFTString)
+      new_field.SetWidth(40)
+      connector_and_streets_intersected_layer.CreateField(new_field)
+
 
     connector_and_streets_intersected_layer_defn = connector_and_streets_intersected_layer.GetLayerDefn()
 
     total_count = 0
+    lines_processed = 0
 
     # LINEARID 1101583236958  does not intersect
     # with connector GeoID 060378004101007 (LINESTRING (-118.7184635353147 34.03795005627166,-118.71887206743176 34.0349485045679)) though it should
@@ -494,9 +503,14 @@ def UnionBlockCentroidStreetLines(execute_level, config):
 
     home_geoids_in_los_angeles = 0
     home_geoids_out_los_angeles = 0
-    for homegeoid in odb.GetOriginGeoIds('060377019023015'):
-      print ("Home GeoID {}".format(homegeoid[0]))
-      connector_layer.SetAttributeFilter("GeoID='" + homegeoid[0] + "'")
+    # if we wanted to do only a subset of the origins, we'd use this and we'd replace the
+    # following references to homegeoid to homegeoid[0] - need to clean that up
+    # for homegeoid in odb.GetOriginGeoIds('060377019023015'):
+    # to do all block centroids, we do the following
+    for homegeoid in cbc.GetBlockGeoIDs():
+
+      print ("Home GeoID {}".format(homegeoid))
+      connector_layer.SetAttributeFilter("GeoID='" + homegeoid + "'")
       if connector_layer.GetFeatureCount() > 0:
         home_geoids_in_los_angeles += 1
         connector_feature = connector_layer.GetNextFeature()
@@ -577,7 +591,8 @@ def UnionBlockCentroidStreetLines(execute_level, config):
         home_geoids_out_los_angeles += 1
 
       if (total_count % 100 == 0):
-          print('We have processed {} segments'.format(str(total_count)))
+        connector_and_streets_intersected_layer.SyncToDisk()
+        print('We have processed {} segments'.format(str(total_count)))
 
     connector_and_streets_intersected_layer.SetSpatialFilter(None)
     census_street_layer.SetSpatialFilter(None)
@@ -694,26 +709,6 @@ def UnionBlockCentroidStreetLines(execute_level, config):
 
       full_merged_layer = None
 
-    if (1 == 2):
-        # Now we merge - let's see what happens
-        with collection(config['SPATIAL']['BASE_STREET_PATH'] +
-                        config['SPATIAL']['LA_Street_Centerlines_Merged'] + 'shp', 'r') as input:
-            schema = input.schema.copy()
-            with collection(
-                    config['SPATIAL']['BASE_STREET_PATH'] +
-                    config['SPATIAL']['LA_Street_Centerlines_Connectors_Merged'] + 'shp',
-                    'w', 'ESRI Shapefile', schema) as output:
-                shapes = []
-                for f in input:
-                    shapes.append(shape(f['geometry']))
-                merged = cascaded_union(shapes)
-                output.write({
-                    'properties': {
-                        'name': 'Buffer Area'
-                    },
-                    'geometry': mapping(merged)
-                })
-
   census_layer = None
   connector_layer = None
   full_merged_layer = None
@@ -724,9 +719,9 @@ def UnionBlockCentroidStreetLines(execute_level, config):
 
 def main(argv):
 
-  if (len(sys.argv) != 2):
+  if (len(sys.argv) != 3):
 
-    print ('You must provide the run configuration.\n' +
+    print ('You must provide the run level and whether this is reentrant.\n' +
            'Valid integer values include\n' +
            '  1: run just the block centroid connector CSV to Shape (only once per full processing round)\n' +
            '  2: intersect the centroid connectors with their nearest streets\n' +
@@ -738,7 +733,7 @@ def main(argv):
     config = configparser.ConfigParser()
     config.read(os.getcwd() + '/params.ini')
 
-    UnionBlockCentroidStreetLines (sys.argv[1], config)
+    UnionBlockCentroidStreetLines (sys.argv[1], sys.argv[2], config)
 
 if __name__ == '__main__':
   main(sys.argv[1:])

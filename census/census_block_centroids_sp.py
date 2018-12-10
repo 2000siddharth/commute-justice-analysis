@@ -1,12 +1,13 @@
 from osgeo import ogr, osr
+import configparser, os, sys
 
 class CensusBlockCentroids:
 
-#  OGRSpatialReference oSRS
-#  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
+  config = configparser.ConfigParser()
+  config.read(os.getcwd() + '/params.ini')
 
   SRID = 32711   # UTM zone 11S, WGS 84
-  blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
+  blocksrc = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
 
   blocknetwork = ogr.Open(blocksrc)
   blocklayer  = blocknetwork.GetLayer(0)
@@ -25,3 +26,10 @@ class CensusBlockCentroids:
 
     return blockCentroid
 
+  def GetBlockGeoIDs(self):
+    """Return a list of all block centroids in the area of interest"""
+    geoids = []
+    for feature in self.blocklayer:
+      geoids.append(feature.GetField("GeoId"))
+
+    return geoids
