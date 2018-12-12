@@ -401,6 +401,39 @@ def GetUsedIDList(config):
 
   return linear_id_list
 
+def write_network_to_disk (config, driver, srs, src_layer):
+
+  new_source = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+                  config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
+  connector_and_streets_intersected_layer_shape = new_source.CreateLayer(
+    config['SPATIAL']['LA_Street_Centerlines_Extended'],
+    srs, ogr.wkbLineString)
+
+  inLayerDefn = src_layer.GetLayerDefn()
+  for i in range(0, inLayerDefn.GetFieldCount()):
+    fieldDefn = inLayerDefn.GetFieldDefn(i)
+    connector_and_streets_intersected_layer_shape.CreateField(fieldDefn)
+
+  # Get the output Layer's Feature Definition
+  connector_layer_rDefn = connector_and_streets_intersected_layer_shape.GetLayerDefn()
+
+  for feature in src_layer:
+    out_feat = ogr.Feature(connector_layer_rDefn)
+
+    # Add field values from input Layer
+    for i in range(0, connector_layer_rDefn.GetFieldCount()):
+      fieldDefn = connector_layer_rDefn.GetFieldDefn(i)
+      out_feat.SetField(connector_layer_rDefn.GetFieldDefn(i).GetNameRef(),
+                          feature.GetField(i))
+
+    out_feat.SetGeometry(feature.GetGeometryRef().Clone())
+    connector_and_streets_intersected_layer_shape.CreateFeature(out_feat)
+    out_feat = None
+    # connector_and_streets_intersected_layer_shape.SyncToDisk()
+
+  connector_and_streets_intersected_layer_shape  = None
+  connector_and_streets_intersected_shape = None
+
 def UnionBlockCentroidStreetLines(execute_level, reentry, config):
   """
   Merge the LA County street lines with the block centroid connector lines
@@ -424,7 +457,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
   srs = osr.SpatialReference()
   srs.ImportFromEPSG(4326)
 
-  driver = ogr.GetDriverByName('ESRI Shapefile')
+  shape_driver = ogr.GetDriverByName('ESRI Shapefile')
   """First, create the connector_network_layer from the CSV file created 
       by the connect_block_centroids_to_neares_streets_extend.py script.
       This only needs to be run once per iteration - if built and testing
@@ -444,15 +477,24 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
 
     cbc = CensusBlockCentroids()
 
+    memory_driver = ogr.GetDriverByName('MEMORY')
+    memory_source = memory_driver.CreateDataSource(config['SPATIAL']['LA_Street_Centerlines_Extended'])
+
+    # shp 8.8 MB, dbf 7.1 MB
     if reentry == 'yes':
-      connector_and_streets_intersected = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
+      print("Re-entering processing - loading into memory")
+      connector_and_streets_intersected_shape = ogr.Open(config['SPATIAL']['BASE_STREET_PATH'] +
                   config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
-      connector_and_streets_intersected_layer = connector_and_streets_intersected.GetLayer(0)
+      connector_and_streets_intersected_layer_shape = connector_and_streets_intersected_shape.GetLayer(0)
+
+      memory_source.CopyLayer(connector_and_streets_intersected_layer_shape,
+                              config['SPATIAL']['LA_Street_Centerlines_Extended'], ['OVERWRITE=YES'])
+
+      connector_and_streets_intersected_layer = memory_source.GetLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'])
     else:
 
-      data_source = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
-      config['SPATIAL']['LA_Street_Centerlines_Extended'] + '.shp')
-      connector_and_streets_intersected_layer = data_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
+
+      connector_and_streets_intersected_layer = memory_source.CreateLayer(config['SPATIAL']['LA_Street_Centerlines_Extended'],
                                            srs, ogr.wkbLineString)
 
       # Create the field definitions
@@ -481,28 +523,18 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
     total_count = 0
     lines_processed = 0
 
-    # LINEARID 1101583236958  does not intersect
-    # with connector GeoID 060378004101007 (LINESTRING (-118.7184635353147 34.03795005627166,-118.71887206743176 34.0349485045679)) though it should
-
-    # This approach uses the connectors as the loop rather than the street segments.  In the end, it then
-    # identifies all street segments that did not intersect with connectors and adds those as well.  This is a
-    # rather expensive query to execute, but should work
-    # connector_layer.SetAttributeFilter('GeoID='060375541051003' OR GeoID='060375531003008' OR GeoID='060375541051004' '
-    #                                    'OR GeoID='060375541051002' OR GeoID='060375545213009' OR GeoID='060375545213009''
-    #                                    'OR GeoID='060379001021519' OR GeoID='060379001021506' OR GeoID='060379002011297''
-    #                                    'OR GeoID='060375531004010' OR GeoID='060375542031006' OR GeoID='060379002011304'' )
-    # connector_layer.SetAttributeFilter('GeoID='060375541051003' OR GeoID='060375541051002' OR GeoID='060375545213009' OR GeoID='060375545213009'')
-    #connector_layer.SetAttributeFilter("GeoID='060373011006013' OR GeoID='060373011006014' OR GeoID='060373011003012' "
-    #connector_layer.SetAttributeFilter("GeoID='060373011006013' OR GeoID='060373011006014' OR GeoID='060373011003012' "
-    #                                  "OR GeoID='060373011002008' OR GeoID='060373011002012' OR GeoID='060373011002009'")
-    # connector_layer.SetAttributeFilter("GeoID='060379800061018'")
-    # connector_layer.SetAttributeFilter("GeoID='060371284003005' OR GeoID='060371284003006' OR GeoID='060371284003002'")
-    # connector_layer.SetAttributeFilter("GeoID='060371284003005' OR GeoID='060371284003006'")
     linearidlist = []
     odb = OriginDestinationDB()
 
     home_geoids_in_los_angeles = 0
     home_geoids_out_los_angeles = 0
+
+    # If we are reentering, then we'll seed the processed list
+    if (reentry == 'yes'):
+      print("Re-entering processing - identifying previously processed records")
+      for processed_feature in connector_and_streets_intersected_layer:
+        linearidlist.append(processed_feature.GetField('LINEARID'))
+
     # if we wanted to do only a subset of the origins, we'd use this and we'd replace the
     # following references to homegeoid to homegeoid[0] - need to clean that up
     # for homegeoid in odb.GetOriginGeoIds('060377019023015'):
@@ -591,8 +623,16 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
         home_geoids_out_los_angeles += 1
 
       if (total_count % 100 == 0):
-        connector_and_streets_intersected_layer.SyncToDisk()
         print('We have processed {} segments'.format(str(total_count)))
+
+
+      if (total_count % 10000 == 0):
+        print('** Committing to disk {} with features {}'.format(str(total_count),
+                                        str(connector_and_streets_intersected_layer.GetFeatureCount())))
+        connector_and_streets_intersected_layer.SetSpatialFilter(None)
+        write_network_to_disk(config, shape_driver, srs, connector_and_streets_intersected_layer)
+
+    write_network_to_disk(config, shape_driver, srs, connector_and_streets_intersected_layer)
 
     connector_and_streets_intersected_layer.SetSpatialFilter(None)
     census_street_layer.SetSpatialFilter(None)
@@ -655,7 +695,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
       """Now we'll union the two sets, street segments and census connectors
          First reestablish layer connection after last round of edits"""
 
-      full_merged_ds = driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
+      full_merged_ds = shape_driver.CreateDataSource(config['SPATIAL']['BASE_STREET_PATH'] +
                                               config['SPATIAL']['LA_Street_Centerlines_Merged'] + '.shp')
       full_merged_layer = full_merged_ds.CreateLayer(
                                               config['SPATIAL']['LA_Street_Centerlines_Merged'],

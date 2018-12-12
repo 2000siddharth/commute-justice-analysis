@@ -57,18 +57,17 @@ SRTM 1 Arc-Second Global data which are set at 30 meter
 All roads - ran getstreets.py to pull down all counties in California 
 * Census blocks:  https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2016&layergroup=Blocks+%282010%29
 
-## General System Prep:
-* Install projections /usr/local/gis/proj4 from egis
-* Install qgis (pip install qgis)
-* Install shapely (pip install shapely==1.6b4)
-* Install networkx to perform the network analysis (shortest_path)  
-  * update - looking at possibly using igraph  
-    * brew install igraph  
-    * pip install python-igraph  
-    * and maybe supported by https://pypi.org/project/s2g/0.2.3/ to load the graph 
-    into the igraph
+## Setting up the Processing Environment:
 
-https://gis.stackexchange.com/questions/82935/ogr-layer-intersection
+Until recently, I was working with a cobbled together patchwork of 
+Python packages including shapely, networkx, GDAL bindings, graph-tool
+and more.  This became unwieldy as i had to upgrade packages for other
+projects I was working on, started getting conflicts and maintenance was 
+a real headache.   I finally caught the Docker bug which has 
+significantly streamlined my environment management.  I created 
+[this Dockerfile](https://github.com/CordThomas/graph-tool-docker) 
+which i start with a command that mounts local files
+as volumes in the container.
 
 # Working the Questions
 
@@ -112,6 +111,10 @@ at each intersecting point.   Run SplitLinesWithLines' split_lines_with_lines me
 with the same source as both network A and B.  This largely uses the Shapely intersect
 and split methods to get the job done.  Can result in a 5-10x network size (# edges).
 
-7.  Then we run **calculate_shortest_routes.py** which uses the streets class’ 
-***InitNetworkGraphPandas*** method to initialize a networkx graph and then ***GetShortestRoute*** 
-which calls on nx.shortest_path
+7. To support the analysis of weight-based networks, we need an attribute in the network
+that represents the cost of that segment.  Run **add_length_weight.py** to populate a
+distance_weight field with the length of the edge.
+
+8.  Now the fun starts - run **calculate_shortest_routes.py** which creates an undirected
+networkx graph, loops over each origin-destination to calculate the total commute distance
+for each block in the study area, writing this distance to a SQLite table, commute_distances. 
