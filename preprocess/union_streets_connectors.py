@@ -379,11 +379,11 @@ def GetMatchingStreet(census_street_layer, connector_geometry):
   line_feature = census_street_layer.GetNextFeature()
   while has_more_features:
     line_string = GetLineString(ConvertMultilinestringtoLinestring(line_feature.GetGeometryRef()))
-    print("    Point Distance to line {}".format(connector_point.distance(line_string)))
+    # print("    Point Distance to line {}".format(connector_point.distance(line_string)))
     if (connector_point.distance(line_string) >= 0.00000049 and connector_point.distance(line_string) <= 0.00000051):
       return line_feature
     line_feature = census_street_layer.GetNextFeature()
-    print("Type {}".format(type(line_feature)))
+    # print("Type {}".format(type(line_feature)))
     if (type(line_feature) != "None"):
       has_more_features = False
 
@@ -548,7 +548,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
         connector_feature = connector_layer.GetNextFeature()
         connector_geom = connector_feature.GetGeometryRef()
         geom_id = connector_feature.GetField('GeoID')
-        print('Working on Connector [{}]: {}'.format(str(total_count), geom_id))
+        # print('Working on Connector [{}]: {}'.format(str(total_count), geom_id))
         total_count += 1
         # Buffer by ~0.1 meter or 0.0000001 decimal degrees in LA.
         connector_end_point = ogr.Geometry(ogr.wkbPoint)
@@ -576,10 +576,10 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
               if (linearid not in linearidlist):
                   linearidlist.append(linearid)
               else:
-                  print ("      !! We are pulling from an already processed street {}".format(linearid))
+                  # print ("      !! We are pulling from an already processed street {}".format(linearid))
                   # connector_and_streets_intersected_layer.SetAttributeFilter("LINEARID='" + linearid + "'")
                   connector_and_streets_intersected_layer.SetSpatialFilter(bounding_box)
-                  print ("      !! This spatial filter resulted in {} selected streets".format(connector_and_streets_intersected_layer.GetFeatureCount()))
+                  # print ("      !! This spatial filter resulted in {} selected streets".format(connector_and_streets_intersected_layer.GetFeatureCount()))
                   street_feature = GetMatchingStreet(connector_and_streets_intersected_layer, connector_geom)
                   if (street_feature is not None):
                     street_geom = street_feature.GetGeometryRef()
@@ -590,8 +590,8 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
                                                                                                        census_street_layer.GetFeatureCount()))
 
               if (street_feature is not None):
-                print ("    Working on Street {} with a connector feature Count {}".format(
-                    street_feature.GetField('LINEARID'), census_street_layer.GetFeatureCount()))
+                #print ("    Working on Street {} with a connector feature Count {}".format(
+                #    street_feature.GetField('LINEARID'), census_street_layer.GetFeatureCount()))
 
                 street_geom = ConvertMultilinestringtoLinestring(street_geom)
 
@@ -613,7 +613,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
 
                     # Now delete the original feature that got unioned with the connector
                     if (len(track_id) > 0):
-                      print ("About to delete track id {}".format(track_id))
+                      # print ("About to delete track id {}".format(track_id))
                       DeleteFeature(connector_and_streets_intersected_layer, track_id)
                     #     break
         else:
@@ -626,15 +626,15 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
         print('We have processed {} segments'.format(str(total_count)))
 
 
-      if (total_count % 10000 == 0):
+      if (total_count % 20000 == 0):
         print('** Committing to disk {} with features {}'.format(str(total_count),
                                         str(connector_and_streets_intersected_layer.GetFeatureCount())))
         connector_and_streets_intersected_layer.SetSpatialFilter(None)
         write_network_to_disk(config, shape_driver, srs, connector_and_streets_intersected_layer)
 
+    connector_and_streets_intersected_layer.SetSpatialFilter(None)
     write_network_to_disk(config, shape_driver, srs, connector_and_streets_intersected_layer)
 
-    connector_and_streets_intersected_layer.SetSpatialFilter(None)
     census_street_layer.SetSpatialFilter(None)
     connector_and_streets_intersected_layer = None
 
