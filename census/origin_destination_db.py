@@ -71,3 +71,15 @@ class OriginDestinationDB(CensusDB):
   def TruncateBlockCommute(self):
     setSQL = "DELETE FROM commute_distances"
     self.exec_s(setSQL)
+
+  def GetMissingBlocks(self):
+
+    sql = "select bc.geoid from street_segment_block_centroid_connectors_extend bc " \
+          "left outer join tl_2016_06000_roads_la_clipped_extended tl on bc.geoid = tl.geoid " \
+          "where tl.linearid is null"
+
+    result, geoids = self.select_many(sql)
+    geoidList = []
+    for geoidsgeometry in geoids:
+      geoidList.append(geoidsgeometry[0])
+    return geoidList

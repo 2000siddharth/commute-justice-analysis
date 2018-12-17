@@ -1,4 +1,4 @@
-from preprocess.SplitLinesWithLines import *
+from SplitLinesWithLines import *
 
 # Using testing set
 # inputSourceA = '/ds/data/spatial/Network/test/la_streets_with_block_centroid_connectors_test.shp'

@@ -539,7 +539,10 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
     # following references to homegeoid to homegeoid[0] - need to clean that up
     # for homegeoid in odb.GetOriginGeoIds('060377019023015'):
     # to do all block centroids, we do the following
-    for homegeoid in cbc.GetBlockGeoIDs():
+
+    missing_blocks = odb.GetMissingBlocks()
+    print("We are going to process {} missig blocks".format(str(len(missing_blocks))))
+    for homegeoid in missing_blocks:
 
       print ("Home GeoID {}".format(homegeoid))
       connector_layer.SetAttributeFilter("GeoID='" + homegeoid + "'")
@@ -550,12 +553,13 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
         geom_id = connector_feature.GetField('GeoID')
         # print('Working on Connector [{}]: {}'.format(str(total_count), geom_id))
         total_count += 1
-        # Buffer by ~0.1 meter or 0.0000001 decimal degrees in LA.
+        # Buffer by ~0.1 meter or 0.000001 decimal degrees in LA.
         connector_end_point = ogr.Geometry(ogr.wkbPoint)
         connector_end_point.AddPoint(connector_geom.GetPoint(1)[0],connector_geom.GetPoint(1)[1])
         bounding_box = connector_end_point.Buffer(0.000001)
         census_street_layer.SetSpatialFilter(bounding_box)
         street_count = 0
+        # print("    Buffer found {} features".format(str(census_street_layer.GetFeatureCount())))
         if (census_street_layer.GetFeatureCount() > 0):
             continue_processing = False
             track_id = ''
@@ -563,6 +567,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
             found_intersection = False
             while (not found_intersection) and (street_count < census_street_layer.GetFeatureCount()):
               street_geom = street_feature.GetGeometryRef()
+              # print("    We found an intersection {}".format(street_geom.Intersects(connector_geom)))
               if (street_geom.Intersects(connector_geom)):
                 found_intersection = True
               else:
@@ -576,7 +581,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
               if (linearid not in linearidlist):
                   linearidlist.append(linearid)
               else:
-                  # print ("      !! We are pulling from an already processed street {}".format(linearid))
+                  #print ("      !! We are pulling from an already processed street {}".format(linearid))
                   # connector_and_streets_intersected_layer.SetAttributeFilter("LINEARID='" + linearid + "'")
                   connector_and_streets_intersected_layer.SetSpatialFilter(bounding_box)
                   # print ("      !! This spatial filter resulted in {} selected streets".format(connector_and_streets_intersected_layer.GetFeatureCount()))
@@ -590,7 +595,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
                                                                                                        census_street_layer.GetFeatureCount()))
 
               if (street_feature is not None):
-                #print ("    Working on Street {} with a connector feature Count {}".format(
+                # print ("    Working on Street {} with a connector feature Count {}".format(
                 #    street_feature.GetField('LINEARID'), census_street_layer.GetFeatureCount()))
 
                 street_geom = ConvertMultilinestringtoLinestring(street_geom)
@@ -598,7 +603,7 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
                 if (street_geom.Intersects(connector_geom)):
                     street_geom = street_geom.Union(connector_geom)
                 else:
-                    print('    Did not intersect, we are going to try extending street {}'.format(linearid))
+                    # print('    Did not intersect, we are going to try extending street {}'.format(linearid))
                     street_geom_tmp = ExtendStreetStreetSegment(street_geom, connector_geom)
                     if street_geom_tmp != None:
                         if (street_geom_tmp.Intersects(connector_geom)):
@@ -612,10 +617,18 @@ def UnionBlockCentroidStreetLines(execute_level, reentry, config):
                                    street_geom, total_count)
 
                     # Now delete the original feature that got unioned with the connector
-                    if (len(track_id) > 0):
+                    if (track_id is not None and len(track_id) > 0):
                       # print ("About to delete track id {}".format(track_id))
                       DeleteFeature(connector_and_streets_intersected_layer, track_id)
                     #     break
+
+            else:
+              # There was no intersection which means we are connecting at the end of the line.
+              # and example of this is for h_geoid of 060376012111016
+              # So, we are not going to intersect anything, just copy the connector feature
+              print("   We believe we are connecting at the end of the street feature {}".format(homegeoid))
+              CopyFeature(connector_feature, connector_and_streets_intersected_layer,
+                          connector_and_streets_intersected_layer_defn)
         else:
             # The connector did not intersect with any streets (unlikely but possible)
             CopyFeature(street_feature, connector_and_streets_intersected_layer, connector_and_streets_intersected_layer_defn)
