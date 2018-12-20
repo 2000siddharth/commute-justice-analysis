@@ -17,8 +17,8 @@ class OriginDestinationDB(CensusDB):
 
   def GetDestinations(self, origingeoid):
     
-    destinationSQL = "SELECT * FROM origindestination WHERE h_geocode=?"
-    result, destinations = self.select_many(destinationSQL, [origingeoid])
+    destinationSQL = "SELECT w_geocode FROM origindestination WHERE h_geocode=?"
+    result, destinations = self.select_many(destinationSQL, origingeoid)
     return destinations
 
   def GetDestinationGeoIds(self, origingeoid):

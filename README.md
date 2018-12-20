@@ -110,11 +110,36 @@ Validated this works via QGIS by running a few examples of the network road grap
 at each intersecting point.   Run SplitLinesWithLines' split_lines_with_lines method
 with the same source as both network A and B.  This largely uses the Shapely intersect
 and split methods to get the job done.  Can result in a 5-10x network size (# edges).
+This produces the final network file, tl_2016_06000_roads_la_clipped_extended_split.shp.
 
 7. To support the analysis of weight-based networks, we need an attribute in the network
 that represents the cost of that segment.  Run **add_length_weight.py** to populate a
 distance_weight field with the length of the edge.
 
-8.  Now the fun starts - run **calculate_shortest_routes.py** which creates an undirected
+8. Snap the features that have been extended, split and merged.  So far I haven't automated
+this step.  Using QGIS, I use the **Snap geometries to layer** plugin, chose the split layer
+produced in step 6 in both the input and reference layer, use a tolerance of 0.00001 degrees, 
+and "chose snap end points to end points" as the behavior.  Should also then remove dangles.
+
+9.  Now the fun starts - run **calculate_shortest_routes.py** which creates an undirected
 networkx graph, loops over each origin-destination to calculate the total commute distance
-for each block in the study area, writing this distance to a SQLite table, commute_distances. 
+for each block in the study area using the networkx.dijkstra_path_length algorithm, 
+writing this distance to a SQLite table, commute_distances (origin, destination, distance). 
+
+Some issues about this analysis approach:
+
+* The TIGER files used to establish the network do not have directionality, so, one-way
+streets are not respected.  I could link to the TIGER relationship files (specifically the
+Address Ranges Relationship File) to accomplish this but did not.  In my study area, one-way
+streets are not a significant factor in the grand scheme of things.
+* The way I split the network edges from the TIGER files does not respect bridges and 
+tunnels, so the overall distances will be underreported and maybe to the extent that
+it's of statistical importance.  One way to solve this would be to use Open Street Map
+data which already has intersections nicely snapped and each street segment broken out 
+(though in my mind, there are too edges to represent street segments - i have to learn
+more why this is) and they respect bridges and tunnels.
+* It would be important to know the average speed on each street segment in the
+morning and afternoon when people are commuting.  There don't appear to be any free
+APIs with traffic / average speed data.
+* This analysis assumes everyone uses surface streets and automobiles vs public transportation
+or other modes such as scooters or bicycles.  

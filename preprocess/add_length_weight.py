@@ -37,7 +37,8 @@ def add_weight(src):
 def main(argv):
   config = configparser.ConfigParser()
   config.read(os.getcwd() + '/params.ini')
-  add_weight('/Users/cthomas/Development/data/spatial/Network/streets/tl_2016_06000_roads_la_clipped_extended_split.shp')
+  add_weight(config['SPATIAL']['BASE_STREET_PATH'] +
+                   config['SPATIAL']['LA_Street_Centerlines_Connectors_Split'] + '.shp')
 
 if __name__ == "__main__":
   main(sys.argv[1:])
