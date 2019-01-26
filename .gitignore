@@ -4,3 +4,4 @@ shortest_routes/*
 .idea/*
 *pyc
 scratch/*
+cache/*

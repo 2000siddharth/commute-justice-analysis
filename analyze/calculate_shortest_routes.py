@@ -94,7 +94,7 @@ def ProcessAllCommutes(config):
     if not pickup_where_we_left_off:
       print ("Investigating Home {}".format(home_geoid))
 
-    if home_geoid == '060591100062001':
+    if home_geoid == '060375433051051':
       pickup_where_we_left_off = True
 
     if (pickup_where_we_left_off and IsHomeCommuteBlock(odb, home_geoid)):
