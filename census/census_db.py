@@ -58,7 +58,6 @@ class CensusDB():
       return 0, all_data
     elif len(args) == 2:
       try:
-        print("   arg   {}  arg {}".format(args[0], (args[1])))
         self.cur.execute(args[0], (args[1],))
         all_data = self.cur.fetchall()
         return 0, all_data

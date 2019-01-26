@@ -56,7 +56,7 @@ def ProcessBlockCommutes(config):
         except nx.exception.NetworkXNoPath as np:
           print("  Exception - No Path")
 
-def IsHomeBlock(odb, block_geoid):
+def IsHomeCommuteBlock(odb, block_geoid):
 
   destinations = odb.GetDestinations(block_geoid)
   return (len(destinations) > 0)
@@ -64,7 +64,7 @@ def IsHomeBlock(odb, block_geoid):
 def ProcessAllCommutes(config):
 
   odb = OriginDestinationDB()
-  odb.TruncateBlockCommute()
+  # odb.TruncateBlockCommute()
 
   print("Loading directed graph")
   dg = nx.read_shp(config['SPATIAL']['BASE_STREET_PATH'] +
@@ -89,8 +89,16 @@ def ProcessAllCommutes(config):
     geo_list.append(home_geoid)
 
   print ("Ready to start processing distances")
+  pickup_where_we_left_off = False
   for home_geoid in geo_list:
-    if (IsHomeBlock(odb, home_geoid)):
+    if not pickup_where_we_left_off:
+      print ("Investigating Home {}".format(home_geoid))
+
+    if home_geoid == '060591100062001':
+      pickup_where_we_left_off = True
+
+    if (pickup_where_we_left_off and IsHomeCommuteBlock(odb, home_geoid)):
+      print("Processing Home {}".format(home_geoid))
       t0 = time.time()
       ProcessBlockCommutesFromHome(config, odb, gr, centroids_layer, home_geoid)
       t1 = time.time()
@@ -101,12 +109,11 @@ def ProcessBlockCommutesFromHome(config, odb, gr, centroids_layer, home_geoid):
 
   #  identify the key for the target node
   centroids_layer.SetAttributeFilter("GEOID = '{h}'".format(h=home_geoid))
-  print("   Filtered".format(home_geoid))
   h_feature = centroids_layer.GetNextFeature()
   h_geometry = h_feature.GetGeometryRef()
   target_network_key = (h_geometry.GetX(), h_geometry.GetY())
 
-  print("   About to get destiations {}".format(home_geoid))
+  print("   About to get destinations {}".format(home_geoid))
   for w_geoid in odb.GetDestinationGeoIds(home_geoid):
 
     print("   About to process work {}".format(w_geoid[0]))
