@@ -1,4 +1,4 @@
-from .streets import *
+from .streets import Streets
 # http://epydoc.sourceforge.net/manual-fields.html
 # https://graph-tool.skewed.de/performance
 """Network analysis implementation for the commute justice analysis
@@ -17,4 +17,4 @@ __email__ = "cord.thomas@gmail.com"
 __status__ = "Prototype"
 
 class Network (Streets):
-
+  print("Hello world!!")

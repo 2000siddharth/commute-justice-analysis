@@ -101,7 +101,7 @@ class Streets(multiprocessing.Process):
   # these methods rewritten from the C version of Paul Bourke's
   # geometry computations:
   # http://local.wasp.uwa.edu.au/~pbourke/geometry/pointline/
-  def magnitude(self, p1, p2):
+  def DistanceBetweenPoints(self, p1, p2):
     vect_x = p2.GetX() - p1.GetX()
     vect_y = p2.GetY() - p1.GetY()
     return sqrt(vect_x**2 + vect_y**2)
@@ -111,29 +111,29 @@ class Streets(multiprocessing.Process):
     lineerr = 0
 
     try:
-      line_magnitude =  self.magnitude(line_end, line_start)
+      line_DistanceBetweenPoints =  self.DistanceBetweenPoints(line_end, line_start)
 
       lineerr = 1
-      if line_magnitude == 0:
-        print("We have a 0 length magnitude for point {} to line {}, {}".format(point, line_end, line_start))
+      if line_DistanceBetweenPoints == 0:
+        print("We have a 0 length DistanceBetweenPoints for point {} to line {}, {}".format(point, line_end, line_start))
         return None
 
       lineerr = 3
       u = ((point.GetX() - line_start.GetX()) * (line_end.GetX() - line_start.GetX()) +
          (point.GetY() - line_start.GetY()) * (line_end.GetY() - line_start.GetY())) \
-         / (line_magnitude ** 2)
+         / (line_DistanceBetweenPoints ** 2)
     except:
-      print("Error with a line magnitude of {} at line {}".format(line_magnitude, lineerr))
+      print("Error with a line DistanceBetweenPoints of {} at line {}".format(line_DistanceBetweenPoints, lineerr))
       return None
 
     if logLevel >= 2:
-       print ("        We have u of {} and line_magnitude of {}".format(u, line_magnitude))
+       print ("        We have u of {} and line_DistanceBetweenPoints of {}".format(u, line_DistanceBetweenPoints))
 
     # closest point does not fall within the line segment, 
     # take the shorter distance to an endpoint
     if u < 0.0000001 or u > 1:
-      ix = self.magnitude(point, line_start)
-      iy = self.magnitude(point, line_end)
+      ix = self.DistanceBetweenPoints(point, line_start)
+      iy = self.DistanceBetweenPoints(point, line_end)
       if ix > iy:
         if logLevel >= 1:
           print ("        returning Line End: {}".format(line_end))
@@ -204,7 +204,7 @@ class Streets(multiprocessing.Process):
            print ("Breakking on invalid intersection point")
            return None, None
 
-         cur_dist = self.magnitude (pntSource, intersection_point)
+         cur_dist = self.DistanceBetweenPoints (pntSource, intersection_point)
 
          if logLevel >= 1:
            print ("       Processing lineSegment {} with cur_dist {}".format(lineSegment, cur_dist))

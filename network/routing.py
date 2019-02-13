@@ -1,7 +1,11 @@
 from osgeo import ogr
+import configparser, os
+
+config = configparser.ConfigParser()
+config.read(os.getcwd() + '/params.ini')
 
 roadsrc = "/Users/cthomas/Development/Data/spatial/Network/streets/tl_2016_06000_roads.shp"
-blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][''Census_Block10_Centroids'] + '.shp'
+blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
 
 roadnetwork = ogr.Open(roadsrc)
 roadlayer  = roadnetwork.GetLayer(0)

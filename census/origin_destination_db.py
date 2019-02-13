@@ -51,6 +51,14 @@ class OriginDestinationDB(CensusDB):
       geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
     return geoidDict
 
+  def GetProcessedGeoIDsOSM(self):
+    geoidsSQL = "SELECT geoid, lat_long_end FROM nearest_street_node_info"
+    result, geoids = self.select_many(geoidsSQL)
+    geoidDict = {}
+    for geoidsgeometry in geoids:
+      geoidDict[geoidsgeometry[0]] = geoidsgeometry[1]
+    return geoidDict
+
   def GetProcessedGeoIDExtend(self):
     geoidsSQL = "SELECT geoid, geometry FROM block_centroid_intersection_extend"
     result, geoids = self.select_many(geoidsSQL)
@@ -63,6 +71,13 @@ class OriginDestinationDB(CensusDB):
     setSQL = "UPDATE origindestination SET o_d_commute = ? WHERE h_geocode = ? and w_geocode = ?"
     # print ("about to execute SQL {} with homegeoid {} and workgeoid {} and length of {}".format(setSQL, homegeoid, workgeoid, route_length))
     self.exec(setSQL, (route_length, homegeoid, workgeoid))
+
+  def SetNearestStreetInfo(self, homegeoid, lat_long_key, distance_to_edge,
+                                 osmid, remaining_length):
+    setSQL = "INSERT INTO nearest_street_node_info (geoid, lat_long_end, dist_to_edge, " \
+             "osmid_edge, length_along_edge) VALUES (?, ?, ?, ?, ?)"
+    self.exec(setSQL, (str(homegeoid), str(lat_long_key), distance_to_edge,
+                                 osmid, remaining_length))
 
   def InsertBlockCommute(self, homegeoid, workgeoid, route_length):
     setSQL = "INSERT INTO commute_distances (h_geocode, w_geocode, distance) VALUES (?, ?, ?)"

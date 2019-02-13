@@ -7,33 +7,42 @@ import configparser
 import fiona
 from shapely.geometry import Point, shape
 from math import sqrt
-from sys import maxsize
+from sys import maxsize, float_info
 import shutil
 from itertools import tee
 
 # https://pymotw.com/2/threading/
-class Streets():
+class Streets(object):
 
 #  OGRSpatialReference oSRS
 #  oSRS.SetWellKnownGeogCS( "EPSG:4269" )
 
-  def __init__(self):
-    print ("INITING STREET NETWORK {}".format(os.getcwd()))
+  def __init__(self, street_network_src = None):
+
+    print("INITING STREET NETWORK {}".format(os.getcwd()))
 
     config = configparser.ConfigParser()
     config.read(os.getcwd() + '/params.ini')
 
-    self.SRID = 32711   # UTM zone 11S, WGS 84
-    self.road_origin = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines'] + '.shp'
-    self.roadsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['LA_Street_Centerlines_Block_Connectors'] + '.shp'
-    self.blocksrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
+    # 32711 is 11S, 26911 is 11N
+    # 26945 is California NAD83 Zone 5
+    self.SRID = 26945  # UTM zone 11N, WGS 84
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(self.SRID)
+    self.spatialRef = srs
+
+    if (street_network_src == None):
+      self.roadsrc = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL'][
+        'LA_Street_Centerlines_Block_Connectors'] + '.shp'
+    else:
+      self.roadsrc = street_network_src
 
     self.roadnetwork = ogr.Open(self.roadsrc)
-    self.roadlayer  = self.roadnetwork.GetLayer(0)
-    self.roadnetwork_origin = ogr.Open(self.road_origin)
-    self.roadlayer_origin  = self.roadnetwork_origin.GetLayer(0)
+    self.roadlayer = self.roadnetwork.GetLayer(0)
+
+    self.blocksrc = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL']['Census_Block10_Centroids'] + '.shp'
     self.blocknetwork = ogr.Open(self.blocksrc)
-    self.blocklayer  = self.blocknetwork.GetLayer(0)
+    self.blocklayer = self.blocknetwork.GetLayer(0)
 
     self.sourceSpatialRef = self.roadlayer.GetSpatialRef()
     self.targetSpatialRef = osr.SpatialReference()
@@ -41,7 +50,15 @@ class Streets():
 
     self.transform = osr.CoordinateTransformation(self.sourceSpatialRef, self.targetSpatialRef)
 
-    print ("DONE INITING")
+    print("DONE INITING ")
+
+  @classmethod
+  def init_with_layer (cls, layer_src):
+    return cls(layer_src)
+
+  @classmethod
+  def init_default(cls):
+    return cls()
 
   def GetCountAllRoadSegments(self):
     return self.roadlayer.GetFeatureCount()
@@ -52,6 +69,11 @@ class Streets():
   def GetProjectedLength(self, geometry):
     geometry.Transform(self.transform)
     return geometry.Length()
+
+  def TransformShape(self, geometry):
+    new_geometry = geometry.Clone()
+    new_geometry.Transform(self.transform)
+    return new_geometry
 
   # Reference:  http://www.gdal.org/classOGRGeometryCollection.html
   def GetLengthAllRoads(self):
@@ -312,11 +334,12 @@ class Streets():
 
       return path_length
 
-# Following 2 methods from http://gis.stackexchange.com/a/438/94363
+  # Calculate the distance from p1 and p2
+  # Following 2 methods from http://gis.stackexchange.com/a/438/94363
   # these methods rewritten from the C version of Paul Bourke's
   # geometry computations:
   # http://local.wasp.uwa.edu.au/~pbourke/geometry/pointline/
-  def magnitude(self, p1, p2):
+  def DistanceBetweenPoints(self, p1, p2):
     vect_x = p2.GetX() - p1.GetX()
     vect_y = p2.GetY() - p1.GetY()
     return sqrt(vect_x**2 + vect_y**2)
@@ -326,29 +349,29 @@ class Streets():
     lineerr = 0
 
     try:
-      line_magnitude =  self.magnitude(line_end, line_start)
+      line_DistanceBetweenPoints =  self.DistanceBetweenPoints(line_end, line_start)
 
       lineerr = 1
-      if line_magnitude == 0:
-        print("We have a 0 length magnitude for point {} to line {}, {}".format(point, line_end, line_start))
+      if line_DistanceBetweenPoints == 0:
+        print("We have a 0 length DistanceBetweenPoints for point {} to line {}, {}".format(point, line_end, line_start))
         return None
 
       lineerr = 3
       u = ((point.GetX() - line_start.GetX()) * (line_end.GetX() - line_start.GetX()) +
          (point.GetY() - line_start.GetY()) * (line_end.GetY() - line_start.GetY())) \
-         / (line_magnitude ** 2)
+         / (line_DistanceBetweenPoints ** 2)
     except:
-      print("Error with a line magnitude of {} at line {}".format(line_magnitude, lineerr))
+      print("Error with a line DistanceBetweenPoints of {} at line {}".format(line_DistanceBetweenPoints, lineerr))
       return None
 
     if logLevel >= 2:
-       print ("        We have u of {} and line_magnitude of {}".format(u, line_magnitude))
+       print ("        We have u of {} and line_DistanceBetweenPoints of {}".format(u, line_DistanceBetweenPoints))
 
     # closest point does not fall within the line segment,
     # take the shorter distance to an endpoint
     if u < 0.0000001 or u > 1:
-      ix = self.magnitude(point, line_start)
-      iy = self.magnitude(point, line_end)
+      ix = self.DistanceBetweenPoints(point, line_start)
+      iy = self.DistanceBetweenPoints(point, line_end)
       if ix > iy:
         if logLevel >= 1:
           print ("        returning Line End: {}".format(line_end))
@@ -455,10 +478,99 @@ class Streets():
     inDataSource = None
     outDataSource = None
 
-  # Tried using QGIS but only supports python 2.N
+  def within(self, p, q, r):
+    "Return true iff q is between p and r (inclusive)."
+    return p <= q <= r or r <= q <= p
+
+  def isBetween(self, a, b, c):
+    crossproduct = (c.GetY() - a.GetY()) * (b.GetX() - a.GetX()) - (c.GetX() - a.GetX()) * (b.GetY() - a.GetY())
+
+    # compare versus epsilon for floating point values, or != 0 if using integers
+    if abs(crossproduct) > float_info.epsilon:
+      return False
+
+    dotproduct = (c.GetX() - a.GetX()) * (b.GetX() - a.GetX()) + (c.GetY() - a.GetY()) * (b.GetY() - a.GetY())
+    if dotproduct < 0:
+      return False
+
+    squaredlengthba = (b.GetX() - a.GetX()) * (b.GetX() - a.GetX()) + (b.GetY() - a.GetY()) * (b.GetY() - a.GetY())
+    if dotproduct > squaredlengthba:
+      return False
+
+    return True
+
+  def IsPointInBetween(self, pntFirst, pntSecond, pntTest):
+    """A simplified version of cross-product evaluation of whether a point
+    is on a line.  Compares the slope of the line to the slopes of the
+    lines that would be created between the test point and the lines two
+    nodes within a certain tolerance and then verifies that the point
+    is within the bounding box of the line."""
+
+    if (pntFirst.GetX() == pntTest.GetX() or pntSecond.GetX() == pntTest.GetX()):
+      return True
+
+    line_slope = abs((pntSecond.GetY() - pntFirst.GetY()) / (pntSecond.GetX() - pntFirst.GetX()))
+    test_slope_start = abs((pntFirst.GetY() - pntTest.GetY()) / (pntFirst.GetX() - pntTest.GetX()))
+    test_slope_end = abs((pntTest.GetY() - pntSecond.GetY()) / (pntTest.GetX() - pntSecond.GetX()))
+
+    delta_start = abs(line_slope - test_slope_start)
+    delta_end = abs(line_slope - test_slope_end)
+
+    return ((delta_start < 0.0001 and delta_end < 0.0001)
+      and (self.within (pntFirst.GetX(), pntTest.GetX(), pntSecond.GetX())
+      and self.within (pntFirst.GetY(), pntTest.GetY(), pntSecond.GetY())))
+
+  def GetStartAndEndVertices(self, edge, i):
+
+    pointStart = ogr.Geometry(ogr.wkbPoint)
+    pointStart.AddPoint(edge.GetPoint(i)[0], edge.GetPoint(i)[1])
+    pointEnd = ogr.Geometry(ogr.wkbPoint)
+    pointEnd.AddPoint(edge.GetPoint(i+1)[0], edge.GetPoint(i+1)[1])
+
+    return pointStart, pointEnd
+
+  def GetLengthFromMidpointToEnd(self, edge, midPoint):
+    """Given an edge with 2 or more vertices, find the length
+      of an arbitrary point on that line to the end.  Iterate
+      through each of the vertices in the edge, find the two
+      vertices that bookend the midpoint and then calculate
+      the length from that midpoint to the next vertex and
+      add that to all remaining line segments.
+
+      It also returns the coordinates of the end nodes vertex."""
+
+    length = 0.0
+    lat_long = ''
+
+    midPoint.Transform(self.transform)
+    edge.Transform(self.transform)
+
+    if (len(edge.GetPoints()) == 0):
+      pointStart, pointEnd = self.GetStartAndEndVertices(edge, 0)
+      length = self.DistanceBetweenPoints(pointStart, pointEnd)
+    else:
+      in_the_line = False
+      count_points = edge.GetPointCount()
+      for i in range(0, count_points - 1):
+        pointStart, pointEnd = self.GetStartAndEndVertices(edge, i)
+        isBetween = self.IsPointInBetween(pointStart, pointEnd, midPoint)
+        if not in_the_line and isBetween:
+          length = self.DistanceBetweenPoints(midPoint, pointEnd)
+          in_the_line = True
+        else:
+          if (in_the_line):
+            length += self.DistanceBetweenPoints(pointStart, pointEnd)
+
+        if (i == count_points - 2):
+          lat_long = str(pointEnd.GetX()) + ":" + str(pointEnd.GetY())
+
+    return length, lat_long
+
+  # Given a point lying near in the vicinity of edges in a network,
+  # fidn the nearest edge to that point and return the distance to that
+  # edge and the edge feature.
   # Found this solution recommended here http://gis.stackexchange.com/a/150409/94363
   # With implementation here:  http://gis.stackexchange.com/a/81824/94363
-  # Given a point, find the nearest street segment to this point
   def GetNearestStreet(self, logLevel, pntSource):
 
     nearest_point = None
@@ -466,8 +578,8 @@ class Streets():
     nearest_street = None
     nearestSegment = None
 
-    self.roadlayer_origin.ResetReading()
-    for roadsegment in self.roadlayer_origin:
+    self.roadlayer.ResetReading()
+    for roadsegment in self.roadlayer:
        roadGeometry = roadsegment.GetGeometryRef()
 
        if logLevel >= 1:
@@ -493,7 +605,7 @@ class Streets():
            print ("Breakking on invalid intersection point")
            return None, None
 
-         cur_dist = self.magnitude (pntSource, intersection_point)
+         cur_dist = self.DistanceBetweenPoints (pntSource, intersection_point)
 
          if logLevel >= 1:
            print ("       Processing lineSegment {} with cur_dist {}".format(lineSegment, cur_dist))
@@ -552,12 +664,12 @@ class Streets():
       ogrPoly = ogr.Geometry(ogr.wkbPolygon)
       ogrPoly.AddGeometry(ring)
       # print ("About to set spatial filter")
-      self.roadlayer_origin.SetSpatialFilter(ogrPoly)
+      self.roadlayer.SetSpatialFilter(ogrPoly)
       # print ("Set spatial filter!")
 
-      enoughSegments = (self.roadlayer_origin.GetFeatureCount() > 1)
+      enoughSegments = (self.roadlayer.GetFeatureCount() > 1)
       bufferSize = bufferSize + 0.0005
 
       if logLevel == 1:
-        for feature in self.roadlayer_origin:
+        for feature in self.roadlayer:
           print("    Feature street name: {}".format(feature.GetField("FULLNAME")))

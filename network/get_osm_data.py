@@ -30,18 +30,19 @@ def import_and_prep_data(config):
   south = 33.4
   north = 35.4
 
-  ox.config(use_cache=True, log_console=True)
+  if (1==1):
+    ox.config(use_cache=True, log_console=True)
 
-  greater_la_streets_box = ox.graph_from_bbox(north, south, east, west,
-                                network_type='drive', simplify=True,
-                                timeout=3600,
-                                infrastructure='way["highway"~"motorway|trunk|primary|secondary|' \
-                                'residential|motorway_link|trunk_link|primary_link"]')
+    greater_la_streets_box = ox.graph_from_bbox(north, south, east, west,
+                                  network_type='drive', simplify=True,
+                                  timeout=3600,
+                                  infrastructure='way["highway"~"motorway|trunk|primary|secondary|' \
+                                  'residential|motorway_link|trunk_link|primary_link"]')
 
-  print ("   Saving to {}".format(config['SPATIAL']['CA_Street_Centerlines_OSM']))
+    print ("   Saving to {}".format(config['SPATIAL']['CA_Street_Centerlines_OSM']))
 
-  ox.save_graph_shapefile(greater_la_streets_box, filename=config['SPATIAL']['CA_Street_Centerlines_OSM'] + longlatkey,
-                     folder=config['SPATIAL']['BASE_STREET_PATH'])
+    ox.save_graph_shapefile(greater_la_streets_box, filename=config['SPATIAL']['CA_Street_Centerlines_OSM'],
+                       folder=config['SPATIAL']['BASE_STREET_PATH'])
 
   # Now clip the OSM data and census blocks with the buffered LA Country polygon.
   la_clip_path = config['DEFAULT']['BASE_PATH_SPATIAL'] + config['SPATIAL']['LA_County_Buffered'] + '.shp'
@@ -51,7 +52,7 @@ def import_and_prep_data(config):
 
   print("About to clip Street Centerlines to buffered LA County area")
 
-  california_streets = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Street_Centerlines_OSM'] + '.shp'
+  california_streets = config['SPATIAL']['BASE_STREET_PATH'] + config['SPATIAL']['CA_Street_Centerlines_OSM'] + '/edges/edges.shp'
   california_streets_src = ogr.Open(california_streets, 0)
   california_streets_layer = california_streets_src.GetLayer(0)
 
