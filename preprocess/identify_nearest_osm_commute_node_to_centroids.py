@@ -30,7 +30,7 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
   # Make this multi threaded - http://www.craigaddyman.com/python-queues-and-multi-threading/
   # I took a stab at this with parallel_collect_commute_stats_block_level but ran into
   # some concurrency issues with the osgeo layer object - will revisit at some point
-  # censuslayer.SetAttributeFilter("GeoID='060290058024070' OR GeoID='060379011011007'")
+  # censuslayer.SetAttributeFilter("GeoID='060290057001548'")
   for censusblock in censuslayer:
     n += 1
 
@@ -44,11 +44,11 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
     homeGeometry = censusblock.GetGeometryRef()
 
     if homegeoid not in dictGeoIDs:
-      print("    Processing Home GEO {}".format(homegeoid))
       streets.FilterNearbyStreets(logLevel, homeGeometry)
       nearest_point_on_street, nearest_street = streets.GetNearestStreet(logLevel, homeGeometry)
-      if nearest_point_on_street != None:
-        nearest_street_geometry = nearest_street.GetGeometryRef().Clone()
+      if nearest_point_on_street != None and nearest_street != None:
+        print("Processing Home GEO {} amd street {}".format(homegeoid, nearest_street.GetField("OSMID")))
+        nearest_street_geometry = streets.ConvertMultilinestringtoLinestring(nearest_street.GetGeometryRef().Clone())
         remaining_length, lat_long_key = streets.GetLengthFromMidpointToEnd(nearest_street_geometry,
                                                                             nearest_point_on_street)
         utmHomeGeometry = streets.TransformShape(homeGeometry)
@@ -56,9 +56,9 @@ def CreateBlockCentroidToStreetConnectorSegments(config):
         odb.SetNearestStreetInfo(homegeoid, lat_long_key, distance_to_edge,
                                  nearest_street.GetField("OSMID"), remaining_length)
       else:
-        print("---- We could not find a nearest street for Block {}".format(homegeoid))
+        print("      ---- We could not find a nearest street for Block {}".format(homegeoid))
     else:
-      print("Already processed {}".format(homegeoid))
+     print("     Already processed {}".format(homegeoid))
 
   census = None
 

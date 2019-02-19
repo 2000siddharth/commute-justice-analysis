@@ -396,13 +396,16 @@ class Streets(object):
 
   # Convert a multilinestring to a linestring
   def ConvertMultilinestringtoLinestring(self, multilinestring):
-    ls = ogr.Geometry(ogr.wkbLineString)
-    for linestr in multilinestring:
-      # print ("Processing MLS with line {}".format(linestr))
-      for pnt in linestr.GetPoints():
-        # print ("Processing MLS with point {}".format(pnt))
-        ls.AddPoint(pnt[0], pnt[1])
-    return ls
+    if (multilinestring.GetGeometryType() == ogr.wkbLineString):
+        return multilinestring
+    else:
+      ls = ogr.Geometry(ogr.wkbLineString)
+      for linestr in multilinestring:
+        # print ("Processing MLS with line {}".format(linestr))
+        for pnt in linestr.GetPoints():
+          # print ("Processing MLS with point {}".format(pnt))
+          ls.AddPoint(pnt[0], pnt[1])
+      return ls
 
 
   # Create a copy of a shapefile, adding the new name
@@ -516,7 +519,14 @@ class Streets(object):
     delta_start = abs(line_slope - test_slope_start)
     delta_end = abs(line_slope - test_slope_end)
 
-    return ((delta_start < 0.0001 and delta_end < 0.0001)
+    # print("        Line slope {} slope end {}\ndelta "
+    #       "start {} delta end {}".format(line_slope, test_slope_start, delta_start, delta_end))
+
+    # if ((delta_start < 0.2 and delta_end < 0.2) and
+    #   (delta_start > 0.05 and delta_end > 0.05)):
+    #   print("   ----- We have a delta > 0.05 and < 0.2")
+
+    return ((delta_start < 0.05 and delta_end < 0.05)
       and (self.within (pntFirst.GetX(), pntTest.GetX(), pntSecond.GetX())
       and self.within (pntFirst.GetY(), pntTest.GetY(), pntSecond.GetY())))
 
@@ -545,6 +555,8 @@ class Streets(object):
     midPoint.Transform(self.transform)
     edge.Transform(self.transform)
 
+    # print("    We have an edge {}".format(edge))
+
     if (len(edge.GetPoints()) == 0):
       pointStart, pointEnd = self.GetStartAndEndVertices(edge, 0)
       length = self.DistanceBetweenPoints(pointStart, pointEnd)
@@ -554,6 +566,7 @@ class Streets(object):
       for i in range(0, count_points - 1):
         pointStart, pointEnd = self.GetStartAndEndVertices(edge, i)
         isBetween = self.IsPointInBetween(pointStart, pointEnd, midPoint)
+        # print("    We are between {} for Start {}\n Mid {}\n End {}".format(isBetween, pointStart, midPoint, pointEnd))
         if not in_the_line and isBetween:
           length = self.DistanceBetweenPoints(midPoint, pointEnd)
           in_the_line = True

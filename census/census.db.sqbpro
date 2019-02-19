@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="/Users/cthomas/Development/Data/Census/census.db" foreign_keys="1"/><window><current_tab id="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1290"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="commute_distances"/><default_encoding codec=""/><browsetable_info data="AAAAAQAAACIAYwBvAG0AbQB1AHQAZQBfAGQAaQBzAHQAYQBuAGMAZQBzAAAAAAAAAAAAAAADAAAAAwAAALYAAAACAAAAmAAAAAEAAACLAAAAAAAAAAAA//////////8AAAAA/////w=="/></tab_browse><tab_sql><sql name="SQL 1">select cd.distance as sa1_dist
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+where od.w_geocode = '060377019023015'
+and CAST(od.sa01  AS INTEGER) &gt; 0</sql><sql name="SQL 2">select Code, total_distance, people, avg_distance from(
+select  'SA01' As Code, SUM(CAST(SA01 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SA01 AS INTEGER)) AS People,
+SUM(CAST(SA01 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SA01 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SA01 AS INTEGER) &gt; 0
+union
+select   'SA02' As Code, SUM(CAST(SA02 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SA02 AS INTEGER)) AS People,
+SUM(CAST(SA02 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SA02 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SA02 AS INTEGER) &gt; 0
+union
+select  'SA03' As Code,  SUM(CAST(SA03 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SA03 AS INTEGER)) AS People,
+SUM(CAST(SA03 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SA03 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SA03 AS INTEGER) &gt; 0
+union
+select  'SE01' As Code,  SUM(CAST(SE01 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SE01 AS INTEGER)) AS People,
+SUM(CAST(SE01 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SE01 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SE01 AS INTEGER) &gt; 0
+union
+select  'SE02' As Code,  SUM(CAST(SE02 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SE02 AS INTEGER)) AS People,
+SUM(CAST(SE02 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SE02 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SE02 AS INTEGER) &gt; 0
+union
+select  'SE03' As Code,  SUM(CAST(SE03 AS INTEGER)*IFNULL(cd.distance,0)) AS total_distance,
+SUM(CAST(SE03 AS INTEGER)) AS People,
+SUM(CAST(SE03 AS INTEGER)*IFNULL(cd.distance,0)) /SUM(CAST(SE03 AS INTEGER))  AS Avg_distance
+from origindestination od join commute_distances cd on od.h_geocode = cd.h_geocode
+-- where od.w_geocode = '060377019023015'
+AND CAST(od.SE03 AS INTEGER) &gt; 0)
+order by Code</sql><sql name="SQL 3">select * from origindestination where CAST(sa01 AS INTEGER) &gt; 1</sql><sql name="SQL 4">select count(w_geocode), CAST(distance/10 as INTEGER) * 10
+from commute_distances group by CAST(distance/10 as INTEGER) * 10
+order by count(w_geocode) desc</sql><sql name="SQL 6">-- identify statistics for commuters from home block
+select count(*) from origindestination where h_geocode = '060372760001009' - 100
+select min(distance), max(distance), avg(distance), sum(distance) from commute_distances where h_geocode = '060372760001009'
+-- median  - 13088.25 
+SELECT AVG(distance)
+FROM (SELECT distance
+      FROM commute_distances where h_geocode = '060372760001009'
+      ORDER BY distance
+      LIMIT 2 - (SELECT COUNT(*) FROM commute_distances where h_geocode = '060372760001009') % 2    -- odd 1, even 2
+      OFFSET (SELECT (COUNT(*) - 1) / 2
+              FROM commute_distances where h_geocode = '060372760001009'))
+select distance FROM commute_distances where h_geocode = '060372760001009' order by distance
+
+-- identify statistics for commuters headed to RAND
+select count(*) from origindestination where w_geocode = '060377019023015' - 1023
+select min(distance), max(distance), avg(distance), sum(distance) from commute_distances where w_geocode = '060377019023015'
+-- median  - 17168.51
+SELECT AVG(distance)
+FROM (SELECT distance
+      FROM commute_distances where w_geocode = '060377019023015'
+      ORDER BY distance
+      LIMIT 2 - (SELECT COUNT(*) FROM commute_distances where w_geocode = '060377019023015') % 2    -- odd 1, even 2
+      OFFSET (SELECT (COUNT(*) - 1) / 2
+              FROM commute_distances where w_geocode = '060377019023015'))
+select distance FROM commute_distances where w_geocode = '060377019023015' order by distance</sql><sql name="SQL 7">select  distinct w_geocode from commute_distances</sql><sql name="SQL 8">select * from nearest_street_node_info
+where geoid = '060379002011140'
+
+delete from nearest_street_node_info
+where geoid = '060379002011140'</sql><current_tab id="6"/></tab_sql></sqlb_project>
