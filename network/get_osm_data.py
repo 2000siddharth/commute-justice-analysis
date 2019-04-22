@@ -63,20 +63,6 @@ def import_and_prep_data(config):
 
   california_streets_layer.Clip(la_clip_layer, la_clipped_streets_layer)
 
-  # print("About to clip Block Centroids to buffered LA County area")
-  #
-  # block_centroids = config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] + config['SPATIAL'][
-  #   'Census_Block10_Centroids_Near_LA'] + '.shp'
-  # block_centroids_src = ogr.Open(block_centroids, 0)
-  # block_centroids_layer = block_centroids_src.GetLayer(0)
-  #
-  # block_centroids_clipped_src = driver.CreateDataSource(config['SPATIAL']['BASE_CENSUS_PATH_SPATIAL'] +
-  #                                       config['SPATIAL']['Census_Block10_Centroids'] + '.shp')
-  # block_centroids_clipped_layer = block_centroids_clipped_src.CreateLayer(config['SPATIAL']['Census_Block10_Centroids'],
-  #                                                                   srs, ogr.wkbPoint)
-  #
-  # block_centroids_layer.Clip(la_clip_layer, block_centroids_clipped_layer)
-
 
 def main(argv):
 
