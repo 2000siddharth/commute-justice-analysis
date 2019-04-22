@@ -98,3 +98,14 @@ class OriginDestinationDB(CensusDB):
     for geoidsgeometry in geoids:
       geoidList.append(geoidsgeometry[0])
     return geoidList
+
+  def GetGTEdgeKey(self, geoid):
+    sql = "SELECT lat_long_end FROM nearest_street_node_info " \
+          "WHERE geoid = ?"
+    return self.select_one(sql, (geoid,))
+
+  def GetAdditionalCommuteLengths(self, geoid):
+    sql = "SELECT dist_to_edge + length_along_edge as additional_distance " \
+          "FROM nearest_street_node_info " \
+          "WHERE geoid = ?"
+    return self.select_one(sql, (geoid,))
