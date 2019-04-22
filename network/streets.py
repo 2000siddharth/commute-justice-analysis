@@ -575,7 +575,7 @@ class Streets(object):
             length += self.DistanceBetweenPoints(pointStart, pointEnd)
 
         if (i == count_points - 2):
-          lat_long = str(pointEnd.GetX()) + ":" + str(pointEnd.GetY())
+          lat_long = str(pointEnd.GetY()) + ":" + str(pointEnd.GetX())
 
     return length, lat_long
 
