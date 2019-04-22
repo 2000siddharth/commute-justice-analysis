@@ -71,10 +71,14 @@ class CensusDB():
         print ("Error is {}".format(e))
         return -1, "Error selecting data"
 
-  def select_one(self, sql_statement):
+  def select_one(self, sql_statement, params):
     try:
-      self.cur.execute(sql_statement)
+      self.cur.execute(sql_statement, params)
       one_data = self.cur.fetchone()
-      return 0, one_data
-    except:
+      if one_data != None:
+        return 0, one_data[0]
+      else:
+        return -1, "No match found"
+    except Exception as e:
+      print("Error is {}".format(e))
       return -1, "Error finding record"
