@@ -83,6 +83,10 @@ class OriginDestinationDB(CensusDB):
     setSQL = "INSERT INTO commute_distances (h_geocode, w_geocode, distance) VALUES (?, ?, ?)"
     self.exec(setSQL, (str(homegeoid), str(workgeoid), route_length))
 
+  def InsertCensusBlock(self, homegeoid, easting, northing, is_commute_block):
+    setSQL = "INSERT INTO census_blocks (geocode, easting, northing, is_commute_block) VALUES (?, ?, ?, ?)"
+    self.exec(setSQL, (str(homegeoid), easting, northing, int(is_commute_block)))
+
   def TruncateBlockCommute(self):
     setSQL = "DELETE FROM commute_distances"
     self.exec_s(setSQL)

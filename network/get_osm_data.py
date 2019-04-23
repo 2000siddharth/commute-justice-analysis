@@ -1,9 +1,6 @@
 import configparser, os, sys
 from osgeo import ogr, osr
-import decimal
 import osmnx as ox
-from shapely.geometry import mapping, shape
-import fiona
 
 def copy_feature_attribute_values(inFeature, outLayerDefn, outFeature):
   for i in range(0, outLayerDefn.GetFieldCount()):
